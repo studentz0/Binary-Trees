@@ -1,5 +1,5 @@
 {
-  "name": "TreeMaster: Binary Tree Visual Learning Suite",
-  "description": "An interactive educational platform for mastering binary trees, traversals, expression trees, and AVL balancing, powered by Gemini AI for dynamic quizzes and code generation.",
+  "name": "TreeMaster: Secure Interactive Learning",
+  "description": "Master binary trees through visualization and AI-powered assessments. Uses enterprise-grade security for API communications.",
   "requestFramePermissions": []
 }
