@@ -1,0 +1,5 @@
+{
+  "name": "TreeMaster: Binary Tree Visual Learning Suite",
+  "description": "An interactive educational platform for mastering binary trees, traversals, expression trees, and AVL balancing, powered by Gemini AI for dynamic quizzes and code generation.",
+  "requestFramePermissions": []
+}
