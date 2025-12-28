@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface NodeProps {
@@ -13,7 +14,7 @@ interface NodeProps {
 
 export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "default", label, onClick, ghost }) => {
   const getColors = () => {
-    if (ghost) return { fill: '#ffffff', stroke: '#e5e7eb', strokeDasharray: '4 4' };
+    if (ghost) return { fill: '#ffffff', stroke: '#e5e7eb', strokeDasharray: '3 3' };
     if (highlight) return { fill: '#2563eb', stroke: '#1d4ed8' };
     
     switch(type) {
@@ -34,11 +35,12 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
       <circle 
         cx={x} 
         cy={y} 
-        r="18" 
+        r="16" 
         style={{ 
           fill: style.fill, 
           stroke: style.stroke, 
-          strokeWidth: '2.5px',
+          strokeWidth: '2px',
+          transition: 'all 0.3s ease',
           ...(style.strokeDasharray ? { strokeDasharray: style.strokeDasharray } : {})
         }} 
       />
@@ -49,9 +51,9 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
         textAnchor="middle" 
         style={{ 
           fill: textColor, 
-          fontSize: '13px', 
-          fontWeight: '800', 
-          fontFamily: 'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+          fontSize: '11px', 
+          fontWeight: '900', 
+          fontFamily: 'JetBrains Mono, monospace',
           pointerEvents: 'none'
         }}
       >
@@ -60,14 +62,14 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
       {label && (
         <text 
           x={x} 
-          y={y + 34} 
+          y={y + 28} 
           textAnchor="middle" 
           style={{ 
-            fill: '#6b7280', 
-            fontSize: '10px', 
-            fontWeight: '800', 
+            fill: '#94a3b8', 
+            fontSize: '8px', 
+            fontWeight: '900', 
             textTransform: 'uppercase', 
-            letterSpacing: '0.08em',
+            letterSpacing: '0.05em',
             fontFamily: 'Inter, sans-serif'
           }}
         >
@@ -82,9 +84,10 @@ export const Edge: React.FC<{ x1: number; y1: number; x2: number; y2: number; hi
   <line 
     x1={x1} y1={y1} x2={x2} y2={y2} 
     style={{ 
-      stroke: highlight ? '#3b82f6' : '#cbd5e1', 
-      strokeWidth: highlight ? '3.5px' : '2px',
-      strokeLinecap: 'round'
+      stroke: highlight ? '#3b82f6' : '#e2e8f0', 
+      strokeWidth: highlight ? '3px' : '1.5px',
+      strokeLinecap: 'round',
+      transition: 'all 0.3s ease'
     }} 
   />
 );
