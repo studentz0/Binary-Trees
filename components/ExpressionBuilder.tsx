@@ -33,10 +33,8 @@ export const ExpressionBuilder = () => {
     if (!isDragging.current || !scrollContainerRef.current) return;
     const currentX = x - scrollContainerRef.current.offsetLeft;
     const currentY = y - scrollContainerRef.current.offsetTop;
-    
     const walkX = (currentX - startPos.current.x);
     const walkY = (currentY - startPos.current.y);
-    
     scrollContainerRef.current.scrollLeft = startScroll.current.left - walkX;
     scrollContainerRef.current.scrollTop = startScroll.current.top - walkY;
   };
@@ -48,9 +46,40 @@ export const ExpressionBuilder = () => {
     }
   };
 
+  const downloadImage = () => {
+    if (!svgRef.current) return;
+    const svg = svgRef.current;
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svg);
+    if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    const img = new Image();
+    const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1200;
+      canvas.height = 800;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, 1200, 800);
+        const pngUrl = canvas.toDataURL("image/png");
+        const downloadLink = document.createElement("a");
+        downloadLink.href = pngUrl;
+        downloadLink.download = `expression-tree.png`;
+        downloadLink.click();
+      }
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+
   const centerView = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft = 1500 - (scrollContainerRef.current.clientWidth / 2);
+      scrollContainerRef.current.scrollLeft = 1000 - (scrollContainerRef.current.clientWidth / 2);
       scrollContainerRef.current.scrollTop = 0;
     }
   };
@@ -107,14 +136,13 @@ export const ExpressionBuilder = () => {
       const assignCoords = (node: any, x: number, y: number, level: number, parentId: number | null, availableWidth: number) => {
          if (!node) return;
          const currentId = idCounter++;
-         const offset = Math.max(availableWidth / 2, 45);
+         const offset = Math.max(availableWidth / 2, 40);
          nodeList.push({ id: currentId, val: node.val, type: node.type, x: x, y: y, p: parentId });
-         if (node.left) assignCoords(node.left, x - offset, y + 100, level + 1, currentId, offset);
-         if (node.right) assignCoords(node.right, x + offset, y + 100, level + 1, currentId, offset);
+         if (node.left) assignCoords(node.left, x - offset, y + 60, level + 1, currentId, offset);
+         if (node.right) assignCoords(node.right, x + offset, y + 60, level + 1, currentId, offset);
       };
 
-      // Center the massive tree on a 3000px width canvas
-      assignCoords(root, 1500, 100, 1, null, 1200);
+      assignCoords(root, 1000, 80, 1, null, 400);
       setNodes(nodeList);
       setError(null);
       setTimeout(centerView, 50);
@@ -122,7 +150,7 @@ export const ExpressionBuilder = () => {
   }, [expression]);
 
   return (
-    <Card title="Expression Architecture" subtitle="Interactive 2D Workspace. Huge trees are scaled automatically.">
+    <Card title="Expression Architecture" subtitle="Compile infix math into structural trees. Compact graph rendering enabled.">
       <div className="mb-6 w-full">
         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
             Infix Expression
@@ -151,12 +179,12 @@ export const ExpressionBuilder = () => {
           onTouchStart={(e) => handleDragStart(e.touches[0].pageX, e.touches[0].pageY)}
           onTouchMove={(e) => handleDragMove(e.touches[0].pageX, e.touches[0].pageY)}
           onTouchEnd={stopDragging}
-          className="w-full h-[450px] sm:h-[700px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-none bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]"
+          className="w-full h-[400px] sm:h-[550px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-none bg-[radial-gradient(#f1f5f9_1px,transparent_1px)] [background-size:20px_20px]"
         >
-          <div className="w-[3000px] h-[2000px] relative">
+          <div className="w-[2000px] h-[1000px] relative">
             <svg 
               ref={svgRef}
-              viewBox="0 0 3000 2000" 
+              viewBox="0 0 2000 1000" 
               className="w-full h-full overflow-visible" 
             >
               {nodes.map(n => {
@@ -179,6 +207,14 @@ export const ExpressionBuilder = () => {
           >
             <Maximize size={14} className="text-indigo-500" /> Center
           </button>
+          {nodes.length > 0 && (
+            <button 
+              onClick={downloadImage}
+              className="flex items-center gap-2 px-4 py-3 bg-white/90 backdrop-blur border border-gray-100 shadow-xl rounded-xl text-gray-800 font-black text-[10px] uppercase active:scale-95 transition-all hover:bg-gray-50"
+            >
+              <Download size={14} className="text-emerald-500" /> Save PNG
+            </button>
+          )}
         </div>
 
         <div className="absolute bottom-6 left-6 pointer-events-none bg-gray-900/10 backdrop-blur px-3 py-2 rounded-full flex items-center gap-2 text-[9px] font-black text-gray-600 uppercase tracking-widest border border-white/40">
