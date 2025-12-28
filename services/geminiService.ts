@@ -12,25 +12,28 @@ export const generateContent = async (prompt: string, isJson: boolean = false) =
     throw new Error("MISSING_KEY");
   }
 
-  // Fix: Initialize a fresh instance for each request to ensure it uses the latest API key
+  // CRITICAL: Initialize a fresh instance for each request right before making the call.
+  // This ensures it uses the most up-to-date API key from potential external dialogs.
   const ai = new GoogleGenAI({ apiKey });
   
   try {
+    // Using gemini-3-pro-preview for complex tasks like quiz generation and code logic implementation.
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      // Fix: Use simple string for text contents as per guidelines
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: isJson ? { 
         responseMimeType: "application/json"
       } : undefined
     });
 
+    // Directly access the .text property (not a method call) to extract generated content.
     if (!response.text) {
       throw new Error("EMPTY_RESPONSE");
     }
 
     return response.text;
   } catch (error: any) {
+    // Handle cases where the API key is invalid or requires reset, allowing the UI to trigger openSelectKey().
     if (error.message?.includes("Requested entity was not found")) {
       throw new Error("MISSING_KEY");
     }
