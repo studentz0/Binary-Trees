@@ -11,30 +11,50 @@ export const ExpressionBuilder = () => {
   const svgRef = useRef<SVGSVGElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // 2D Panning Logic
+  // 2D Panning Logic (Mouse & Touch)
   const isDragging = useRef(false);
   const startPos = useRef({ x: 0, y: 0 });
   const startScroll = useRef({ left: 0, top: 0 });
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleDragStart = (x: number, y: number) => {
     if (!scrollContainerRef.current) return;
     isDragging.current = true;
-    startPos.current = { x: e.pageX - scrollContainerRef.current.offsetLeft, y: e.pageY - scrollContainerRef.current.offsetTop };
-    startScroll.current = { left: scrollContainerRef.current.scrollLeft, top: scrollContainerRef.current.scrollTop };
+    startPos.current = { 
+      x: x - scrollContainerRef.current.offsetLeft, 
+      y: y - scrollContainerRef.current.offsetTop 
+    };
+    startScroll.current = { 
+      left: scrollContainerRef.current.scrollLeft, 
+      top: scrollContainerRef.current.scrollTop 
+    };
     scrollContainerRef.current.style.cursor = 'grabbing';
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleDragMove = (x: number, y: number) => {
     if (!isDragging.current || !scrollContainerRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const y = e.pageY - scrollContainerRef.current.offsetTop;
+    const currentX = x - scrollContainerRef.current.offsetLeft;
+    const currentY = y - scrollContainerRef.current.offsetTop;
     
-    const walkX = (x - startPos.current.x) * 1.5;
-    const walkY = (y - startPos.current.y) * 1.5;
+    const walkX = (currentX - startPos.current.x);
+    const walkY = (currentY - startPos.current.y);
     
     scrollContainerRef.current.scrollLeft = startScroll.current.left - walkX;
     scrollContainerRef.current.scrollTop = startScroll.current.top - walkY;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => handleDragStart(e.pageX, e.pageY);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging.current) e.preventDefault();
+    handleDragMove(e.pageX, e.pageY);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleDragStart(touch.pageX, touch.pageY);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleDragMove(touch.pageX, touch.pageY);
   };
 
   const stopDragging = () => {
@@ -124,23 +144,24 @@ export const ExpressionBuilder = () => {
       const nodeList: any[] = [];
       let idCounter = 1;
 
+      // Expanded coordinate system logic
       const assignCoords = (node: any, x: number, y: number, level: number, parentId: number | null, availableWidth: number) => {
          if (!node) return;
          const currentId = idCounter++;
-         const offset = Math.max(availableWidth / 2, 50);
+         const offset = Math.max(availableWidth / 2, 40);
          nodeList.push({ id: currentId, val: node.val, type: node.type, x: x, y: y, p: parentId });
          if (node.left) assignCoords(node.left, x - offset, y + 100, level + 1, currentId, offset);
          if (node.right) assignCoords(node.right, x + offset, y + 100, level + 1, currentId, offset);
       };
 
-      assignCoords(root, 600, 80, 1, null, 500);
+      assignCoords(root, 1000, 100, 1, null, 800);
       setNodes(nodeList);
       setError(null);
       
-      // Reset view position
+      // Intelligent Auto-Centering
       setTimeout(() => {
         if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollLeft = 200; 
+          scrollContainerRef.current.scrollLeft = 1000 - (scrollContainerRef.current.clientWidth / 2);
           scrollContainerRef.current.scrollTop = 0;
         }
       }, 50);
@@ -148,10 +169,10 @@ export const ExpressionBuilder = () => {
   }, [expression]);
 
   return (
-    <Card title="Expression Playground" subtitle="Type any equation. Drag in any direction to explore architecture.">
+    <Card title="Expression Architecture" subtitle="Drag or swipe in any direction. Huge trees are supported.">
       <div className="mb-6 sm:mb-10 w-full">
         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
-            Infix Expression
+            Mathematical Infix
         </label>
         <div className="relative w-full">
           <input 
@@ -167,23 +188,25 @@ export const ExpressionBuilder = () => {
         </div>
       </div>
 
-      <div className="relative rounded-2xl sm:rounded-[3rem] border-2 border-gray-100 bg-white shadow-inner w-full overflow-hidden">
-        {/* Workspace Container with 2D panning support */}
+      <div className="relative rounded-3xl sm:rounded-[3rem] border-2 border-gray-100 bg-white shadow-inner w-full overflow-hidden">
+        {/* Workspace Container with Touch optimization */}
         <div 
           ref={scrollContainerRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={stopDragging}
           onMouseLeave={stopDragging}
-          className="w-full h-[400px] sm:h-[650px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-auto transition-all duration-300"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={stopDragging}
+          className="w-full h-[450px] sm:h-[750px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-none"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* Expanded Canvas to allow room for panning */}
-          <div className="min-w-[1200px] min-h-[800px] flex items-start justify-center pt-12 pb-24">
+          <div className="w-[2000px] h-[1500px] relative">
             <svg 
               ref={svgRef}
-              viewBox="0 0 1200 800" 
-              className="w-full h-auto overflow-visible" 
+              viewBox="0 0 2000 1500" 
+              className="w-full h-full overflow-visible" 
             >
               {nodes.map(n => {
                 if (!n.p) return null;
@@ -198,17 +221,17 @@ export const ExpressionBuilder = () => {
           </div>
         </div>
         
-        <div className="absolute bottom-6 right-6 z-20">
+        <div className="absolute bottom-6 right-6 z-20 flex flex-col sm:flex-row gap-2">
           <button 
             onClick={downloadImage}
-            className="flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-4 bg-white/90 backdrop-blur border border-gray-100 shadow-2xl rounded-xl text-gray-800 font-black text-[10px] sm:text-xs uppercase tracking-tighter active:scale-95 transition-all hover:bg-gray-50"
+            className="flex items-center gap-2 px-4 py-3 bg-white/90 backdrop-blur border border-gray-100 shadow-xl rounded-xl text-gray-800 font-black text-[10px] uppercase tracking-tighter active:scale-95 transition-all hover:bg-gray-50"
           >
             <Download size={14} className="text-blue-500" /> Save PNG
           </button>
         </div>
 
         <div className="absolute bottom-6 left-6 pointer-events-none bg-gray-900/10 backdrop-blur px-3 py-2 rounded-full flex items-center gap-2 text-[9px] font-black text-gray-600 uppercase tracking-widest border border-white/40">
-           <Move size={12} className="animate-pulse" /> 2D Pan Active
+           <Move size={12} className="animate-pulse" /> Free Pan Enabled
         </div>
       </div>
     </Card>
