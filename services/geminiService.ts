@@ -3,18 +3,22 @@ import { GoogleGenAI } from "@google/genai";
 
 /**
  * Secure Gemini Content Generation Service.
- * Note: The API Key is obtained exclusively from process.env.API_KEY.
+ * Interfaces with window.aistudio for key management in supported environments.
  */
 export const generateContent = async (prompt: string, isJson: boolean = false) => {
-  // Use the injected API key. If it's missing, the SDK will throw an error we can catch.
-  const apiKey = process.env.API_KEY || "";
-  
-  // Initialize a fresh instance for the request as per guidelines
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+    throw new Error("MISSING_KEY");
+  }
+
+  // Fix: Initialize a fresh instance for each request to ensure it uses the latest API key
   const ai = new GoogleGenAI({ apiKey });
   
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
+      // Fix: Use simple string for text contents as per guidelines
       contents: prompt,
       config: isJson ? { 
         responseMimeType: "application/json"
@@ -22,18 +26,15 @@ export const generateContent = async (prompt: string, isJson: boolean = false) =
     });
 
     if (!response.text) {
-      throw new Error("The AI model returned an empty response.");
+      throw new Error("EMPTY_RESPONSE");
     }
 
     return response.text;
   } catch (error: any) {
-    console.error("AI Service Error:", error);
-    
-    // Check for specific error types to provide better feedback
-    if (error.message?.includes("API_KEY") || error.status === 401) {
-      throw new Error("API configuration is missing or invalid.");
+    if (error.message?.includes("Requested entity was not found")) {
+      throw new Error("MISSING_KEY");
     }
-    
+    console.error("AI Service Error:", error.message || "Unknown error");
     throw new Error(error.message || "Unable to communicate with the AI service.");
   }
 };

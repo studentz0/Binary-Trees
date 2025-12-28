@@ -1,36 +1,21 @@
-
 import React, { useState } from 'react';
-import { Sparkles, Loader2, ChevronDown, ChevronRight, Key } from 'lucide-react';
+import { Sparkles, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { generateContent } from '../services/geminiService';
 
 export const AICodeExplainer = ({ topic }: { topic: string }) => {
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [needsKey, setNeedsKey] = useState(false);
-
-  const handleKeySetup = async () => {
-    if ((window as any).aistudio) {
-      await (window as any).aistudio.openSelectKey();
-      setNeedsKey(false);
-      fetchCode();
-    }
-  };
 
   const fetchCode = async () => {
     if (content) return;
     setLoading(true);
-    setNeedsKey(false);
     try {
       const prompt = `Write a concise, clean implementation of ${topic} in Python. Include very brief comments. Output raw code only, no markdown formatting.`;
       const result = await generateContent(prompt);
       setContent(result.replace(/```python/g, '').replace(/```/g, '').trim());
-    } catch (e: any) {
-      if (e.message?.includes("API configuration")) {
-        setNeedsKey(true);
-      } else {
-        setContent("Error generating code. Please try again.");
-      }
+    } catch (e) {
+      setContent("Error generating code. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -55,16 +40,6 @@ export const AICodeExplainer = ({ topic }: { topic: string }) => {
             <div className="flex flex-col items-center justify-center py-8 text-indigo-300">
               <Loader2 className="animate-spin mb-2" size={24} />
               <p className="font-sans">Gemini is thinking...</p>
-            </div>
-          ) : needsKey ? (
-            <div className="flex flex-col items-center justify-center py-4 text-center space-y-4">
-              <p className="text-indigo-300 font-sans">API Key Required</p>
-              <button 
-                onClick={handleKeySetup}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all"
-              >
-                <Key size={16} /> Configure API Key
-              </button>
             </div>
           ) : (
             <pre className="leading-relaxed">{content}</pre>
