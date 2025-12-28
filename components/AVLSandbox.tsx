@@ -9,69 +9,70 @@ interface BSTNode {
     right: BSTNode | null;
 }
 
+interface ImbalanceInfo {
+  type: string;
+  val: number;
+  bf: number;
+}
+
 const ROTATION_CASES = [
     {
         id: 'LL',
         title: "LL Case (Left-Left)",
         concept: "A straight line heavy on the left. The root is imbalanced by its left child's left child.",
         mechanism: "Single Right Rotation. The left child rises to become the parent, and the old parent becomes its right child.",
-        condition: (bf: number, lbf: number) => bf > 1 && lbf >= 0
     },
     {
         id: 'RR',
         title: "RR Case (Right-Right)",
         concept: "A straight line heavy on the right. The root is imbalanced by its right child's right child.",
         mechanism: "Single Left Rotation. The right child rises to become the parent, and the old parent becomes its left child.",
-        condition: (bf: number, rbf: number) => bf < -1 && rbf <= 0
     },
     {
         id: 'LR',
         title: "LR Case (Left-Right)",
         concept: "A zig-zag shape heavy on the left. The child leans right, while the root leans left.",
         mechanism: "Double Rotation: Left Rotation on the child first (to make it LL), then a Right Rotation on the root.",
-        condition: (bf: number, lbf: number) => bf > 1 && lbf < 0
     },
     {
         id: 'RL',
         title: "RL Case (Right-Left)",
         concept: "A zig-zag shape heavy on the right. The child leans left, while the root leans right.",
         mechanism: "Double Rotation: Right Rotation on the child first (to make it RR), then a Left Rotation on the root.",
-        condition: (bf: number, rbf: number) => bf < -1 && rbf > 0
     }
 ];
+
+const getHeight = (node: BSTNode | null | undefined): number => {
+    if (!node) return 0;
+    return 1 + Math.max(getHeight(node.left), getHeight(node.right));
+};
+
+const buildTree = (values: number[]): BSTNode | null => {
+    if (!values.length) return null;
+    const rootNode: BSTNode = { val: values[0], left: null, right: null };
+    
+    for (let i = 1; i < values.length; i++) {
+        let current = rootNode;
+        while (true) {
+            if (values[i] < current.val) {
+                if (!current.left) { current.left = { val: values[i], left: null, right: null }; break; }
+                current = current.left;
+            } else if (values[i] > current.val) {
+                if (!current.right) { current.right = { val: values[i], left: null, right: null }; break; }
+                current = current.right;
+            } else break; 
+        }
+    }
+    return rootNode;
+};
 
 export const AVLSandbox = () => {
     const [treeValues, setTreeValues] = useState<number[]>([]);
     const [inputVal, setInputVal] = useState("");
 
-    const getHeight = (node: BSTNode | null): number => {
-        if (!node) return 0;
-        return 1 + Math.max(getHeight(node.left), getHeight(node.right));
-    };
-
-    const buildTree = (values: number[]): BSTNode | null => {
-        if (!values.length) return null;
-        const root: BSTNode = { val: values[0], left: null, right: null };
-        
-        for (let i = 1; i < values.length; i++) {
-            let current = root;
-            while (true) {
-                if (values[i] < current.val) {
-                    if (!current.left) { current.left = { val: values[i], left: null, right: null }; break; }
-                    current = current.left;
-                } else if (values[i] > current.val) {
-                    if (!current.right) { current.right = { val: values[i], left: null, right: null }; break; }
-                    current = current.right;
-                } else break; 
-            }
-        }
-        return root;
-    };
-
     const root = useMemo(() => buildTree(treeValues), [treeValues]);
 
     const handleApplyRotation = () => {
-        // Educational balance: we re-order values to the perfectly balanced state
         const sorted = [...new Set([...treeValues])].sort((a, b) => a - b);
         const getBalancedOrder = (arr: number[]): number[] => {
             if (arr.length === 0) return [];
@@ -89,10 +90,10 @@ export const AVLSandbox = () => {
         setTreeValues(getBalancedOrder(sorted));
     };
 
-    const { renderedNodes, currentImbalance, svgEdges } = useMemo(() => {
+    const visualization = useMemo(() => {
         const nodes: any[] = [];
         const edges: any[] = [];
-        let detected: { type: string, val: number, bf: number } | null = null;
+        let detected: ImbalanceInfo | null = null;
 
         const layout = (node: BSTNode | null, x: number, y: number, level: number, availableWidth: number) => {
             if (!node) return;
@@ -128,6 +129,8 @@ export const AVLSandbox = () => {
         if (root) layout(root, 200, 50, 1, 180);
         return { renderedNodes: nodes, currentImbalance: detected, svgEdges: edges };
     }, [root]);
+
+    const { renderedNodes, currentImbalance, svgEdges } = visualization;
 
     const addValue = () => {
         const val = parseInt(inputVal);
@@ -188,7 +191,7 @@ export const AVLSandbox = () => {
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {ROTATION_CASES.map(rotation => {
-                                const isRequired = currentImbalance.type === rotation.id;
+                                const isRequired = currentImbalance?.type === rotation.id;
                                 return (
                                     <div key={rotation.id} className={`p-6 rounded-3xl border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-xl shadow-rose-100 ring-4 ring-rose-50' : 'bg-white/50 border-rose-100 opacity-60'}`}>
                                         <div>
@@ -217,7 +220,7 @@ export const AVLSandbox = () => {
                                 <Info size={14} /> Solution Mechanism
                             </h6>
                             <p className="text-sm text-rose-700 leading-relaxed font-medium">
-                                {ROTATION_CASES.find(r => r.id === currentImbalance.type)?.mechanism}
+                                {ROTATION_CASES.find(r => r.id === currentImbalance?.type)?.mechanism}
                             </p>
                         </div>
                     </div>
