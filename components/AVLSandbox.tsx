@@ -16,10 +16,10 @@ interface ImbalanceInfo {
 }
 
 const ROTATION_CASES = [
-    { id: 'LL', title: "LL Case", concept: "Heavy on left-left.", mechanism: "Single Right Rotation. Left child becomes new parent." },
-    { id: 'RR', title: "RR Case", concept: "Heavy on right-right.", mechanism: "Single Left Rotation. Right child becomes new parent." },
-    { id: 'LR', title: "LR Case", concept: "Zig-zag left-right.", mechanism: "Left Rotate child, then Right Rotate root." },
-    { id: 'RL', title: "RL Case", concept: "Zig-zag right-left.", mechanism: "Right Rotate child, then Left Rotate root." }
+    { id: 'LL', title: "LL Case", concept: "Heavy on left-left.", mechanism: "Single Right Rotation. Left child rises." },
+    { id: 'RR', title: "RR Case", concept: "Heavy on right-right.", mechanism: "Single Left Rotation. Right child rises." },
+    { id: 'LR', title: "LR Case", concept: "Zig-zag left-right.", mechanism: "Left then Right Rotation sequence." },
+    { id: 'RL', title: "RL Case", concept: "Zig-zag right-left.", mechanism: "Right then Left Rotation sequence." }
 ];
 
 const getHeight = (node: BSTNode | null | undefined): number => {
@@ -37,7 +37,6 @@ const buildTree = (values: number[]): BSTNode | null => {
                 if (!current.left) { current.left = { val: values[i], left: null, right: null }; break; }
                 current = current.left;
             } else {
-                // Duplicates go to right subtree
                 if (!current.right) { current.right = { val: values[i], left: null, right: null }; break; }
                 current = current.right;
             }
@@ -73,27 +72,29 @@ export const AVLSandbox = () => {
 
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const scaleFactor = 2;
-        canvas.width = 1000 * scaleFactor;
-        canvas.height = 1125 * scaleFactor; // Maintains 400x450 ratio
+        const outputWidth = 1600;
+        const outputHeight = 1300;
+        canvas.width = outputWidth;
+        canvas.height = outputHeight;
         
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.fillStyle = "white";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           
-          // Center content nicely
-          const drawWidth = canvas.width * 0.9;
-          const drawHeight = canvas.height * 0.9;
-          const xOffset = (canvas.width - drawWidth) / 2;
-          const yOffset = (canvas.height - drawHeight) / 2;
+          // Draw with 15% padding to fix "zoomed-in" feel
+          const paddingFactor = 0.15;
+          const targetWidth = canvas.width * (1 - paddingFactor * 2);
+          const targetHeight = canvas.height * (1 - paddingFactor * 2);
+          const xOffset = (canvas.width - targetWidth) / 2;
+          const yOffset = (canvas.height - targetHeight) / 2;
 
-          ctx.drawImage(img, xOffset, yOffset, drawWidth, drawHeight);
+          ctx.drawImage(img, xOffset, yOffset, targetWidth, targetHeight);
           
           const pngUrl = canvas.toDataURL("image/png");
           const downloadLink = document.createElement("a");
           downloadLink.href = pngUrl;
-          downloadLink.download = `avl-tree.png`;
+          downloadLink.download = `avl-balancing.png`;
           document.body.appendChild(downloadLink);
           downloadLink.click();
           document.body.removeChild(downloadLink);
@@ -128,7 +129,7 @@ export const AVLSandbox = () => {
 
         const layout = (node: BSTNode | null, x: number, y: number, level: number, availableWidth: number) => {
             if (!node) return;
-            const offset = Math.max(availableWidth / 2, 25);
+            const offset = Math.max(availableWidth / 2, 35);
             const hl = getHeight(node.left);
             const hr = getHeight(node.right);
             const bf = hl - hr;
@@ -141,16 +142,16 @@ export const AVLSandbox = () => {
             }
             nodes.push({ val: node.val, x, y, bf });
             if (node.left) {
-                edges.push(<Edge key={`${node.val}-l-${nodes.length}`} x1={x} y1={y} x2={x - offset} y2={y + 75} highlight={Math.abs(bf) > 1} />);
-                layout(node.left, x - offset, y + 75, level + 1, offset);
+                edges.push(<Edge key={`${node.val}-l-${nodes.length}`} x1={x} y1={y} x2={x - offset} y2={y + 80} highlight={Math.abs(bf) > 1} />);
+                layout(node.left, x - offset, y + 80, level + 1, offset);
             }
             if (node.right) {
-                edges.push(<Edge key={`${node.val}-r-${nodes.length}`} x1={x} y1={y} x2={x + offset} y2={y + 75} highlight={Math.abs(bf) > 1} />);
-                layout(node.right, x + offset, y + 75, level + 1, offset);
+                edges.push(<Edge key={`${node.val}-r-${nodes.length}`} x1={x} y1={y} x2={x + offset} y2={y + 80} highlight={Math.abs(bf) > 1} />);
+                layout(node.right, x + offset, y + 80, level + 1, offset);
             }
         };
 
-        if (root) layout(root, 400, 60, 1, 350);
+        if (root) layout(root, 400, 80, 1, 360);
         return { renderedNodes: nodes, currentImbalance: detected, svgEdges: edges };
     }, [root]);
 
@@ -165,15 +166,15 @@ export const AVLSandbox = () => {
     };
 
     return (
-        <div className="space-y-8 sm:space-y-12">
-            <Card title="Interactive AVL Sandbox" subtitle="Visualize height imbalances in real-time. Duplicate values are permitted.">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
+        <div className="space-y-6 sm:space-y-12">
+            <Card title="Interactive AVL Sandbox" subtitle="Real-time height analysis. Add values to observe how Balance Factors change.">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 sm:mb-8">
                     <input 
                       type="number" 
                       value={inputVal} 
                       onChange={(e) => setInputVal(e.target.value)} 
-                      placeholder="Node value" 
-                      className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-4 sm:w-44 font-black text-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all" 
+                      placeholder="Insert Value" 
+                      className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-4 sm:w-44 font-black text-xl focus:ring-4 focus:ring-blue-100 outline-none transition-all" 
                       onKeyDown={(e) => e.key === 'Enter' && addValue()} 
                     />
                     <div className="flex gap-2">
@@ -192,9 +193,9 @@ export const AVLSandbox = () => {
                     </div>
                 </div>
 
-                <div className="relative group/avl overflow-hidden rounded-[2.5rem] border-2 border-gray-100 bg-white">
-                  <div className="w-full h-[450px] sm:h-[550px] overflow-auto flex items-start justify-center cursor-grab active:cursor-grabbing scrollbar-thin scrollbar-thumb-gray-200">
-                      <div className="min-w-[800px] p-10 flex items-center justify-center">
+                <div className="relative group/avl overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border-2 border-gray-100 bg-white">
+                  <div className="w-full h-[400px] sm:h-[550px] overflow-auto flex items-start justify-center cursor-grab active:cursor-grabbing scrollbar-thin scrollbar-thumb-gray-200">
+                      <div className="min-w-[800px] py-12 px-6 flex items-center justify-center">
                         <svg 
                           ref={svgRef} 
                           viewBox="0 0 800 650" 
@@ -211,53 +212,57 @@ export const AVLSandbox = () => {
                       </div>
                       {treeValues.length === 0 && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 gap-4 p-4 text-center pointer-events-none">
-                              <HelpCircle size={48} className="text-gray-200" />
-                              <p className="font-black uppercase tracking-widest text-sm">Input values to begin visualization</p>
+                              <HelpCircle size={48} className="text-gray-100" />
+                              <p className="font-black uppercase tracking-widest text-xs sm:text-sm">Start by inserting values</p>
                           </div>
                       )}
                   </div>
                   
                   {treeValues.length > 0 && (
-                    <div className="absolute top-6 right-6 opacity-0 group-hover/avl:opacity-100 transition-opacity">
+                    <div className="absolute bottom-4 right-4 sm:top-6 sm:right-6 sm:bottom-auto opacity-100 sm:opacity-0 sm:group-hover/avl:opacity-100 transition-opacity z-20">
                       <button 
                         onClick={downloadImage}
-                        className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-100 shadow-xl rounded-xl text-gray-700 font-bold text-xs hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95"
+                        className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-100 shadow-2xl rounded-2xl text-gray-800 font-black text-[11px] uppercase tracking-tighter hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95"
                       >
-                        <Download size={16} /> Save Image
+                        <Download size={16} className="text-blue-500" /> Save PNG
                       </button>
                     </div>
                   )}
+
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 lg:hidden pointer-events-none bg-black/5 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest border border-white/20">
+                     <Move size={12} /> Slide to view
+                  </div>
                 </div>
 
                 {currentImbalance ? (
-                    <div className="bg-rose-50 border-2 border-rose-100 rounded-[2rem] p-6 mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex items-center gap-3 border-b border-rose-100 pb-3">
-                            <div className="p-2 bg-rose-100 rounded-lg text-rose-600"><AlertTriangle size={20} /></div>
+                    <div className="bg-rose-50 border-2 border-rose-100 rounded-[2rem] p-5 sm:p-8 mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex items-center gap-3 border-b border-rose-100 pb-4">
+                            <div className="p-2.5 bg-rose-100 rounded-xl text-rose-600"><AlertTriangle size={24} /></div>
                             <div>
-                                <h4 className="font-black text-rose-900 uppercase tracking-tighter">Imbalance Detected!</h4>
-                                <p className="text-rose-700 font-bold text-xs">Node {currentImbalance.val} has BF {currentImbalance.bf}</p>
+                                <h4 className="font-black text-rose-900 uppercase tracking-tighter text-base sm:text-lg">Unbalanced Detected</h4>
+                                <p className="text-rose-700 font-bold text-xs">Node {currentImbalance.val} violates AVL height invariant (BF: {currentImbalance.bf})</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                             {ROTATION_CASES.map(rotation => {
                                 const isRequired = currentImbalance.type === rotation.id;
                                 return (
-                                    <div key={rotation.id} className={`p-4 rounded-xl border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-lg ring-2 ring-rose-50' : 'bg-white/50 border-rose-100 opacity-60'}`}>
-                                        <div>
+                                    <div key={rotation.id} className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-xl ring-4 ring-rose-50' : 'bg-white/50 border-rose-100 opacity-60'}`}>
+                                        <div className="mb-4">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${isRequired ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-700'}`}>{rotation.id}</span>
-                                                {isRequired && <Zap size={12} className="text-rose-500 animate-pulse" />}
+                                                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${isRequired ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-700'}`}>{rotation.id}</span>
+                                                {isRequired && <Zap size={14} className="text-rose-500 animate-pulse" />}
                                             </div>
-                                            <h5 className="font-black text-rose-900 mb-1 text-sm leading-tight">{rotation.title}</h5>
-                                            <p className="text-[11px] text-rose-700 leading-tight font-medium mb-3 line-clamp-2">{rotation.concept}</p>
+                                            <h5 className="font-black text-rose-900 mb-1.5 text-xs sm:text-sm leading-tight">{rotation.title}</h5>
+                                            <p className="text-[10px] sm:text-[11px] text-rose-700 leading-tight font-medium mb-1">{rotation.concept}</p>
                                         </div>
                                         {isRequired && (
                                             <button 
                                               onClick={handleApplyRotation} 
-                                              className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-black text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                                              className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-[11px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
                                             >
-                                                Fix <ArrowRight size={12} />
+                                                Apply <ArrowRight size={14} />
                                             </button>
                                         )}
                                     </div>
@@ -266,17 +271,17 @@ export const AVLSandbox = () => {
                         </div>
                     </div>
                 ) : treeValues.length > 0 && (
-                    <div className="bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] p-6 mt-8 flex items-center gap-4">
-                        <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600"><CheckCircle2 size={24} /></div>
+                    <div className="bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] p-6 mt-8 flex items-center gap-4 animate-in fade-in">
+                        <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600"><CheckCircle2 size={28} /></div>
                         <div>
-                            <h4 className="font-black text-emerald-900 uppercase tracking-tighter">Balanced</h4>
-                            <p className="text-emerald-700 font-bold text-xs">Tree satisfies AVL property.</p>
+                            <h4 className="font-black text-emerald-900 uppercase tracking-tighter text-lg">Perfectly Balanced</h4>
+                            <p className="text-emerald-700 font-bold text-xs">Height invariant is maintained across all subtrees.</p>
                         </div>
                     </div>
                 )}
                 
                 <div className="mt-6 flex items-center gap-2 text-gray-400 font-bold text-[10px] uppercase tracking-widest px-2">
-                  <Move size={12} /> Pan to view deep subtrees • Export Image supported
+                  <Move size={12} /> Use horizontal pan for wide branches • 800px Canvas Area
                 </div>
             </Card>
         </div>
