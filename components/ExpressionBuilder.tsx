@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './Layout';
 import { Node, Edge } from './TreeVisuals';
@@ -26,7 +27,7 @@ export const ExpressionBuilder = () => {
 
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      // Use a fixed high-res output size
+      // High resolution output canvas
       const outputWidth = 2400;
       const outputHeight = 1600;
       canvas.width = outputWidth;
@@ -37,9 +38,8 @@ export const ExpressionBuilder = () => {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // We want to draw the 1200x800 SVG into the 2400x1600 canvas
-        // This is a 2x scale, but we add 10% padding to avoid the "zoomed-in" look
-        const padding = 0.1; // 10% padding
+        // Fix for "too zoomed" complaint: Use 15% padding
+        const padding = 0.15; 
         const targetWidth = canvas.width * (1 - padding * 2);
         const targetHeight = canvas.height * (1 - padding * 2);
         
@@ -119,7 +119,8 @@ export const ExpressionBuilder = () => {
       const assignCoords = (node: any, x: number, y: number, level: number, parentId: number | null, availableWidth: number) => {
          if (!node) return;
          const currentId = idCounter++;
-         const offset = Math.max(availableWidth / 2, 35);
+         // Wider initial spread for deeper trees
+         const offset = Math.max(availableWidth / 2, 38);
          
          nodeList.push({ id: currentId, val: node.val, type: node.type, x: x, y: y, p: parentId });
          
@@ -131,15 +132,15 @@ export const ExpressionBuilder = () => {
       setNodes(nodeList);
       setError(null);
     } catch (err) {
-      setError("Expression error. Check balance.");
+      setError("Syntax error in expression.");
     }
   }, [expression]);
 
   return (
-    <Card title="Expression Tree Visualizer" subtitle="Dynamic AST generation. Best viewed on larger screens, scroll horizontally on mobile.">
+    <Card title="Expression Tree Playground" subtitle="Type any equation. The generator handles complex nesting with auto-spacing.">
       <div className="mb-6 sm:mb-8">
-        <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">
-            Math Expression Input
+        <label className="block text-[10px] sm:text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">
+            Arithmetic Infix Input
         </label>
         <div className="relative group">
           <input 
@@ -156,8 +157,8 @@ export const ExpressionBuilder = () => {
         {error && <p className="mt-2 text-rose-500 text-[10px] font-black px-2">{error}</p>}
       </div>
 
-      <div className="relative group/canvas overflow-hidden rounded-[2rem] border-2 border-gray-100 bg-white">
-        <div className="w-full h-[400px] sm:h-[500px] overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent flex items-start justify-center cursor-grab active:cursor-grabbing">
+      <div className="relative group/canvas overflow-hidden rounded-[2rem] border-2 border-gray-100 bg-white shadow-inner">
+        <div className="w-full h-[350px] sm:h-[500px] overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent flex items-start justify-center cursor-grab active:cursor-grabbing">
           <div className="min-w-[1200px] py-10">
             <svg 
               ref={svgRef}
@@ -180,27 +181,28 @@ export const ExpressionBuilder = () => {
           </div>
         </div>
         
-        {/* Floating Actions - Always visible on mobile */}
-        <div className="absolute bottom-4 right-4 sm:top-6 sm:right-6 sm:bottom-auto flex gap-3 opacity-100 sm:opacity-0 sm:group-hover/canvas:opacity-100 transition-opacity z-20">
+        {/* Floating Actions - Prominent on mobile */}
+        <div className="absolute bottom-4 right-4 sm:top-6 sm:right-6 sm:bottom-auto z-20">
           <button 
             onClick={downloadImage}
-            className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-100 shadow-2xl rounded-2xl text-gray-800 font-black text-[11px] uppercase tracking-tighter hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95"
+            className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 shadow-2xl rounded-2xl text-gray-800 font-black text-[11px] uppercase tracking-tighter hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95 group"
           >
-            <Download size={16} className="text-blue-500" /> Export PNG
+            <Download size={16} className="text-blue-500 group-hover:scale-110 transition-transform" /> 
+            <span>Export Image</span>
           </button>
         </div>
 
-        {/* Swipe indicator for mobile */}
+        {/* Pan Indicator */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 lg:hidden pointer-events-none bg-black/5 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest border border-white/20">
-           <Move size={12} /> Slide to view
+           <Move size={12} /> Slide to pan
         </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-4 px-2">
         <div className="flex items-center gap-2 text-gray-400 font-bold text-[10px] uppercase tracking-widest">
-          <Maximize2 size={12} /> 1200px Infinite Canvas
+          <Maximize2 size={12} /> Auto-expanding SVG Area
         </div>
-        <div className="hidden sm:block text-[10px] font-bold text-gray-300 italic">Nodes automatically space out for complex depth</div>
+        <div className="text-[10px] font-bold text-gray-300 italic hidden sm:block">Compiler Abstract Syntax Tree (AST) Visualization</div>
       </div>
     </Card>
   );

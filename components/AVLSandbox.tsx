@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { Card } from './Layout';
 import { Node, Edge } from './TreeVisuals';
@@ -16,10 +17,10 @@ interface ImbalanceInfo {
 }
 
 const ROTATION_CASES = [
-    { id: 'LL', title: "LL Case", concept: "Heavy on left-left.", mechanism: "Single Right Rotation. Left child rises." },
-    { id: 'RR', title: "RR Case", concept: "Heavy on right-right.", mechanism: "Single Left Rotation. Right child rises." },
-    { id: 'LR', title: "LR Case", concept: "Zig-zag left-right.", mechanism: "Left then Right Rotation sequence." },
-    { id: 'RL', title: "RL Case", concept: "Zig-zag right-left.", mechanism: "Right then Left Rotation sequence." }
+    { id: 'LL', title: "LL Case", concept: "Heavy on left-left branch.", mechanism: "Single Right Rotation." },
+    { id: 'RR', title: "RR Case", concept: "Heavy on right-right branch.", mechanism: "Single Left Rotation." },
+    { id: 'LR', title: "LR Case", concept: "Zig-zag left-then-right.", mechanism: "Double Rotation (L then R)." },
+    { id: 'RL', title: "RL Case", concept: "Zig-zag right-then-left.", mechanism: "Double Rotation (R then L)." }
 ];
 
 const getHeight = (node: BSTNode | null | undefined): number => {
@@ -82,7 +83,7 @@ export const AVLSandbox = () => {
           ctx.fillStyle = "white";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           
-          // Draw with 15% padding to fix "zoomed-in" feel
+          // Better centering with 15% padding
           const paddingFactor = 0.15;
           const targetWidth = canvas.width * (1 - paddingFactor * 2);
           const targetHeight = canvas.height * (1 - paddingFactor * 2);
@@ -94,7 +95,7 @@ export const AVLSandbox = () => {
           const pngUrl = canvas.toDataURL("image/png");
           const downloadLink = document.createElement("a");
           downloadLink.href = pngUrl;
-          downloadLink.download = `avl-balancing.png`;
+          downloadLink.download = `avl-balancing-diagram.png`;
           document.body.appendChild(downloadLink);
           downloadLink.click();
           document.body.removeChild(downloadLink);
@@ -129,7 +130,7 @@ export const AVLSandbox = () => {
 
         const layout = (node: BSTNode | null, x: number, y: number, level: number, availableWidth: number) => {
             if (!node) return;
-            const offset = Math.max(availableWidth / 2, 35);
+            const offset = Math.max(availableWidth / 2, 38);
             const hl = getHeight(node.left);
             const hr = getHeight(node.right);
             const bf = hl - hr;
@@ -166,14 +167,14 @@ export const AVLSandbox = () => {
     };
 
     return (
-        <div className="space-y-6 sm:space-y-12">
-            <Card title="Interactive AVL Sandbox" subtitle="Real-time height analysis. Add values to observe how Balance Factors change.">
+        <div className="space-y-6 sm:space-y-10">
+            <Card title="Interactive AVL Balancing" subtitle="Insert numbers to see Balance Factors update. If BF > 1, apply rotations.">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 sm:mb-8">
                     <input 
                       type="number" 
                       value={inputVal} 
                       onChange={(e) => setInputVal(e.target.value)} 
-                      placeholder="Insert Value" 
+                      placeholder="Insert Node" 
                       className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-4 sm:w-44 font-black text-xl focus:ring-4 focus:ring-blue-100 outline-none transition-all" 
                       onKeyDown={(e) => e.key === 'Enter' && addValue()} 
                     />
@@ -193,7 +194,7 @@ export const AVLSandbox = () => {
                     </div>
                 </div>
 
-                <div className="relative group/avl overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border-2 border-gray-100 bg-white">
+                <div className="relative group/avl overflow-hidden rounded-[2rem] border-2 border-gray-100 bg-white">
                   <div className="w-full h-[400px] sm:h-[550px] overflow-auto flex items-start justify-center cursor-grab active:cursor-grabbing scrollbar-thin scrollbar-thumb-gray-200">
                       <div className="min-w-[800px] py-12 px-6 flex items-center justify-center">
                         <svg 
@@ -213,24 +214,25 @@ export const AVLSandbox = () => {
                       {treeValues.length === 0 && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 gap-4 p-4 text-center pointer-events-none">
                               <HelpCircle size={48} className="text-gray-100" />
-                              <p className="font-black uppercase tracking-widest text-xs sm:text-sm">Start by inserting values</p>
+                              <p className="font-black uppercase tracking-widest text-xs">Waiting for nodes...</p>
                           </div>
                       )}
                   </div>
                   
                   {treeValues.length > 0 && (
-                    <div className="absolute bottom-4 right-4 sm:top-6 sm:right-6 sm:bottom-auto opacity-100 sm:opacity-0 sm:group-hover/avl:opacity-100 transition-opacity z-20">
+                    <div className="absolute bottom-4 right-4 sm:top-6 sm:right-6 sm:bottom-auto z-20">
                       <button 
                         onClick={downloadImage}
-                        className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-100 shadow-2xl rounded-2xl text-gray-800 font-black text-[11px] uppercase tracking-tighter hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95"
+                        className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-100 shadow-2xl rounded-2xl text-gray-800 font-black text-[11px] uppercase tracking-tighter hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95 group"
                       >
-                        <Download size={16} className="text-blue-500" /> Save PNG
+                        <Download size={16} className="text-blue-500 group-hover:scale-110 transition-transform" /> 
+                        <span>Download PNG</span>
                       </button>
                     </div>
                   )}
 
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 lg:hidden pointer-events-none bg-black/5 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest border border-white/20">
-                     <Move size={12} /> Slide to view
+                     <Move size={12} /> Pan Area
                   </div>
                 </div>
 
@@ -239,8 +241,8 @@ export const AVLSandbox = () => {
                         <div className="flex items-center gap-3 border-b border-rose-100 pb-4">
                             <div className="p-2.5 bg-rose-100 rounded-xl text-rose-600"><AlertTriangle size={24} /></div>
                             <div>
-                                <h4 className="font-black text-rose-900 uppercase tracking-tighter text-base sm:text-lg">Unbalanced Detected</h4>
-                                <p className="text-rose-700 font-bold text-xs">Node {currentImbalance.val} violates AVL height invariant (BF: {currentImbalance.bf})</p>
+                                <h4 className="font-black text-rose-900 uppercase tracking-tighter text-base sm:text-lg">Balance Required</h4>
+                                <p className="text-rose-700 font-bold text-xs">Node {currentImbalance.val} is heavy on the {currentImbalance.type.startsWith('L') ? 'Left' : 'Right'} (BF: {currentImbalance.bf})</p>
                             </div>
                         </div>
 
@@ -248,21 +250,21 @@ export const AVLSandbox = () => {
                             {ROTATION_CASES.map(rotation => {
                                 const isRequired = currentImbalance.type === rotation.id;
                                 return (
-                                    <div key={rotation.id} className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-xl ring-4 ring-rose-50' : 'bg-white/50 border-rose-100 opacity-60'}`}>
+                                    <div key={rotation.id} className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-xl ring-4 ring-rose-50 scale-[1.02]' : 'bg-white/50 border-rose-100 opacity-60'}`}>
                                         <div className="mb-4">
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${isRequired ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-700'}`}>{rotation.id}</span>
                                                 {isRequired && <Zap size={14} className="text-rose-500 animate-pulse" />}
                                             </div>
                                             <h5 className="font-black text-rose-900 mb-1.5 text-xs sm:text-sm leading-tight">{rotation.title}</h5>
-                                            <p className="text-[10px] sm:text-[11px] text-rose-700 leading-tight font-medium mb-1">{rotation.concept}</p>
+                                            <p className="text-[10px] text-rose-700 leading-tight font-medium">{rotation.concept}</p>
                                         </div>
                                         {isRequired && (
                                             <button 
                                               onClick={handleApplyRotation} 
-                                              className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-[11px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                                              className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-[11px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
                                             >
-                                                Apply <ArrowRight size={14} />
+                                                Auto-Fix <ArrowRight size={14} />
                                             </button>
                                         )}
                                     </div>
@@ -272,16 +274,16 @@ export const AVLSandbox = () => {
                     </div>
                 ) : treeValues.length > 0 && (
                     <div className="bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] p-6 mt-8 flex items-center gap-4 animate-in fade-in">
-                        <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600"><CheckCircle2 size={28} /></div>
+                        <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600 shadow-sm"><CheckCircle2 size={28} /></div>
                         <div>
-                            <h4 className="font-black text-emerald-900 uppercase tracking-tighter text-lg">Perfectly Balanced</h4>
-                            <p className="text-emerald-700 font-bold text-xs">Height invariant is maintained across all subtrees.</p>
+                            <h4 className="font-black text-emerald-900 uppercase tracking-tighter text-lg">Stable AVL Tree</h4>
+                            <p className="text-emerald-700 font-bold text-xs">All nodes satisfy the height-balance requirement.</p>
                         </div>
                     </div>
                 )}
                 
                 <div className="mt-6 flex items-center gap-2 text-gray-400 font-bold text-[10px] uppercase tracking-widest px-2">
-                  <Move size={12} /> Use horizontal pan for wide branches • 800px Canvas Area
+                  <Move size={12} /> Horizontal pan enabled for mobile • High-Res PNG Export
                 </div>
             </Card>
         </div>
