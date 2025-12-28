@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Card } from './Layout';
 import { generateContent } from '../services/geminiService';
-import { Brain, Sparkles, Loader2, Check, X, RotateCcw, MessageSquare, AlertCircle } from 'lucide-react';
+import { Brain, Sparkles, Loader2, Check, X, RotateCcw, MessageSquare, AlertCircle, Key, ExternalLink } from 'lucide-react';
 import { QuizQuestion } from '../types';
 
 export const AIQuizSection = () => {
@@ -10,6 +11,17 @@ export const AIQuizSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [showResults, setShowResults] = useState(false);
+
+  const handleKeySetup = async () => {
+    if ((window as any).aistudio) {
+      try {
+        await (window as any).aistudio.openSelectKey();
+        startQuiz(); // Retry immediately after selection
+      } catch (e) {
+        console.error("Key selection failed", e);
+      }
+    }
+  };
 
   const startQuiz = async () => {
     setLoading(true);
@@ -24,7 +36,8 @@ export const AIQuizSection = () => {
       setUserAnswers({});
       setShowResults(false);
     } catch (e: any) {
-      setError(e.message || "Failed to generate quiz. Please check your API configuration.");
+      console.error("Quiz Error:", e);
+      setError(e.message || "Failed to generate quiz.");
     } finally {
       setLoading(false);
     }
@@ -43,18 +56,41 @@ export const AIQuizSection = () => {
   }
 
   if (error) {
+    const isConfigError = error.includes("configuration") || error.includes("API");
+    
     return (
       <Card className="border-t-4 border-t-rose-500">
         <div className="flex flex-col items-center justify-center py-12 text-center text-rose-600">
           <AlertCircle size={48} className="mb-4" />
           <h3 className="text-xl font-black uppercase mb-2">Quiz Error</h3>
           <p className="mb-6 font-medium text-gray-600 px-8">{error}</p>
-          <button 
-            onClick={startQuiz}
-            className="bg-rose-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-rose-700 transition-all flex items-center gap-2"
-          >
-            <RotateCcw size={18} /> Retry Generation
-          </button>
+          
+          <div className="flex flex-col gap-3">
+            {isConfigError && (window as any).aistudio && (
+              <>
+                <button 
+                  onClick={handleKeySetup}
+                  className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg shadow-indigo-100"
+                >
+                  <Key size={18} /> Configure API Key
+                </button>
+                <a 
+                  href="https://ai.google.dev/gemini-api/docs/billing" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-gray-400 hover:text-indigo-600 flex items-center justify-center gap-1 font-bold underline"
+                >
+                  Billing Info <ExternalLink size={10} />
+                </a>
+              </>
+            )}
+            <button 
+              onClick={startQuiz}
+              className="bg-white border-2 border-gray-100 text-gray-500 px-8 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all flex items-center gap-2"
+            >
+              <RotateCcw size={18} /> Retry Generation
+            </button>
+          </div>
         </div>
       </Card>
     );

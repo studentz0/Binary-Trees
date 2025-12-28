@@ -1,18 +1,16 @@
+
 import { GoogleGenAI } from "@google/genai";
 
 /**
  * Secure Gemini Content Generation Service.
- * Note: For security, the API Key is never hardcoded. 
- * It is sourced from process.env.API_KEY which is managed via environment variables.
+ * Note: The API Key is obtained exclusively from process.env.API_KEY.
  */
 export const generateContent = async (prompt: string, isJson: boolean = false) => {
-  // Ensure the environment variable is available
-  if (!process.env.API_KEY) {
-    throw new Error("API configuration is missing. Please set the API_KEY environment variable.");
-  }
-
-  // Initialize a fresh instance for the request
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Use the injected API key. If it's missing, the SDK will throw an error we can catch.
+  const apiKey = process.env.API_KEY || "";
+  
+  // Initialize a fresh instance for the request as per guidelines
+  const ai = new GoogleGenAI({ apiKey });
   
   try {
     const response = await ai.models.generateContent({
@@ -23,15 +21,19 @@ export const generateContent = async (prompt: string, isJson: boolean = false) =
       } : undefined
     });
 
-    // Check for safety filters or empty responses
     if (!response.text) {
-      throw new Error("The AI model returned an empty response. This may be due to safety filters.");
+      throw new Error("The AI model returned an empty response.");
     }
 
     return response.text;
   } catch (error: any) {
-    // Log generic error for security, avoiding leaking sensitive stack traces to the user
-    console.error("AI Service Error:", error.message || "Unknown error");
-    throw new Error("Unable to communicate with the AI service. Please try again later.");
+    console.error("AI Service Error:", error);
+    
+    // Check for specific error types to provide better feedback
+    if (error.message?.includes("API_KEY") || error.status === 401) {
+      throw new Error("API configuration is missing or invalid.");
+    }
+    
+    throw new Error(error.message || "Unable to communicate with the AI service.");
   }
 };
