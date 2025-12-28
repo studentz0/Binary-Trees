@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card } from './Layout';
 import { Node, Edge } from './TreeVisuals';
-import { AlertTriangle, Plus, Trash2, ShieldCheck, HelpCircle, Info, RotateCcw, Zap, ArrowRight } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, ShieldCheck, HelpCircle, Info, RotateCcw, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface BSTNode {
     val: number;
@@ -10,28 +9,36 @@ interface BSTNode {
     right: BSTNode | null;
 }
 
-const ROTATION_INFO: Record<string, { title: string, description: string, mechanism: string }> = {
-    'LL': {
-        title: "Left-Left (LL) Case",
-        description: "The tree is 'heavy' on the left side of a left child. It forms a straight line leaning left.",
-        mechanism: "Perform a single Right Rotation on the imbalanced node. This 'pulls' the node down and elevates its left child."
+const ROTATION_CASES = [
+    {
+        id: 'LL',
+        title: "LL Case (Left-Left)",
+        concept: "A straight line heavy on the left. The root is imbalanced by its left child's left child.",
+        mechanism: "Single Right Rotation. The left child rises to become the parent, and the old parent becomes its right child.",
+        condition: (bf: number, lbf: number) => bf > 1 && lbf >= 0
     },
-    'RR': {
-        title: "Right-Right (RR) Case",
-        description: "The tree is 'heavy' on the right side of a right child. It forms a straight line leaning right.",
-        mechanism: "Perform a single Left Rotation on the imbalanced node. This 'pulls' the node down and elevates its right child."
+    {
+        id: 'RR',
+        title: "RR Case (Right-Right)",
+        concept: "A straight line heavy on the right. The root is imbalanced by its right child's right child.",
+        mechanism: "Single Left Rotation. The right child rises to become the parent, and the old parent becomes its left child.",
+        condition: (bf: number, rbf: number) => bf < -1 && rbf <= 0
     },
-    'LR': {
-        title: "Left-Right (LR) Case",
-        description: "The child node is left-heavy, but its own child is right-heavy (a zig-zag shape).",
-        mechanism: "Perform a Left Rotation on the child first (to make it LL), then a Right Rotation on the imbalanced root node."
+    {
+        id: 'LR',
+        title: "LR Case (Left-Right)",
+        concept: "A zig-zag shape heavy on the left. The child leans right, while the root leans left.",
+        mechanism: "Double Rotation: Left Rotation on the child first (to make it LL), then a Right Rotation on the root.",
+        condition: (bf: number, lbf: number) => bf > 1 && lbf < 0
     },
-    'RL': {
-        title: "Right-Left (RL) Case",
-        description: "The child node is right-heavy, but its own child is left-heavy (a zig-zag shape).",
-        mechanism: "Perform a Right Rotation on the child first (to make it RR), then a Left Rotation on the imbalanced root node."
+    {
+        id: 'RL',
+        title: "RL Case (Right-Left)",
+        concept: "A zig-zag shape heavy on the right. The child leans left, while the root leans right.",
+        mechanism: "Double Rotation: Right Rotation on the child first (to make it RR), then a Left Rotation on the root.",
+        condition: (bf: number, rbf: number) => bf < -1 && rbf > 0
     }
-};
+];
 
 export const AVLSandbox = () => {
     const [treeValues, setTreeValues] = useState<number[]>([]);
@@ -55,7 +62,7 @@ export const AVLSandbox = () => {
                 } else if (values[i] > current.val) {
                     if (!current.right) { current.right = { val: values[i], left: null, right: null }; break; }
                     current = current.right;
-                } else break; // Dedupe
+                } else break; 
             }
         }
         return root;
@@ -63,19 +70,15 @@ export const AVLSandbox = () => {
 
     const root = useMemo(() => buildTree(treeValues), [treeValues]);
 
-    const handleBalance = () => {
-        // Simplified educational balancing: sorting the values creates a perfectly balanced BST
-        // when built with the sequential insertion logic (if we were to re-insert them optimally)
-        // In a real AVL, we would just swap pointers, but for this visualizer's state management:
+    const handleApplyRotation = () => {
+        // Educational balance: we re-order values to the perfectly balanced state
         const sorted = [...new Set([...treeValues])].sort((a, b) => a - b);
-        
         const getBalancedOrder = (arr: number[]): number[] => {
             if (arr.length === 0) return [];
             const mid = Math.floor(arr.length / 2);
             const res = [arr[mid]];
             const left = getBalancedOrder(arr.slice(0, mid));
             const right = getBalancedOrder(arr.slice(mid + 1));
-            // Interleave left and right for level-order style insertion to maintain balance
             const maxLen = Math.max(left.length, right.length);
             for(let i=0; i<maxLen; i++) {
                 if(left[i] !== undefined) res.push(left[i]);
@@ -83,9 +86,7 @@ export const AVLSandbox = () => {
             }
             return res;
         };
-
-        const balancedValues = getBalancedOrder(sorted);
-        setTreeValues(balancedValues);
+        setTreeValues(getBalancedOrder(sorted));
     };
 
     const { renderedNodes, currentImbalance, svgEdges } = useMemo(() => {
@@ -102,12 +103,13 @@ export const AVLSandbox = () => {
             const bf = hl - hr;
             
             if (Math.abs(bf) > 1 && !detected) {
-                if (bf > 1) { 
-                     const lbf = getHeight(node.left?.left) - getHeight(node.left?.right);
-                     detected = { type: lbf >= 0 ? "LL" : "LR", val: node.val, bf };
-                } else { 
-                     const rbf = getHeight(node.right?.left) - getHeight(node.right?.right);
-                     detected = { type: rbf <= 0 ? "RR" : "RL", val: node.val, bf };
+                const lbf = getHeight(node.left?.left) - getHeight(node.left?.right);
+                const rbf = getHeight(node.right?.left) - getHeight(node.right?.right);
+                
+                if (bf > 1) {
+                    detected = { type: lbf >= 0 ? "LL" : "LR", val: node.val, bf };
+                } else {
+                    detected = { type: rbf <= 0 ? "RR" : "RL", val: node.val, bf };
                 }
             }
             
@@ -137,7 +139,7 @@ export const AVLSandbox = () => {
 
     return (
         <div className="space-y-12">
-            <Card title="Interactive AVL Sandbox" subtitle="Build a tree and identify imbalances. The system will detect the specific rotation needed.">
+            <Card title="Interactive AVL Sandbox" subtitle="Input numbers to create a tree. If an imbalance occurs, the system will highlight the required rotation.">
                 <div className="flex flex-wrap items-center gap-4 mb-10">
                     <div className="relative">
                       <input 
@@ -150,100 +152,87 @@ export const AVLSandbox = () => {
                       />
                     </div>
                     <button onClick={addValue} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-blue-100 transition-all flex items-center gap-3">
-                        <Plus size={20}/> INSERT NODE
+                        <Plus size={20}/> INSERT
                     </button>
-                    <button onClick={() => setTreeValues([])} className="bg-white text-gray-500 hover:text-rose-600 hover:bg-rose-50 border-2 border-gray-100 hover:border-rose-100 px-8 py-4 rounded-2xl font-black transition-all flex items-center gap-3">
-                        <Trash2 size={20}/> CLEAR TREE
+                    <button onClick={() => setTreeValues([])} className="bg-white text-gray-500 hover:text-rose-600 hover:bg-rose-50 border-2 border-gray-100 px-8 py-4 rounded-2xl font-black transition-all flex items-center gap-3">
+                        <Trash2 size={20}/> CLEAR
                     </button>
                 </div>
 
-                {currentImbalance && (
-                    <div className="mb-10 p-0 overflow-hidden bg-rose-50 border-2 border-rose-100 rounded-[2.5rem] shadow-xl shadow-rose-100/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="p-8 flex flex-col md:flex-row items-center gap-8">
-                            <div className="p-5 bg-rose-100 rounded-3xl text-rose-600 shrink-0">
-                                <AlertTriangle size={40} />
-                            </div>
-                            <div className="flex-1 text-center md:text-left">
-                                <h5 className="font-black text-rose-900 text-sm uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-2">
-                                    <Zap size={16} /> Imbalance Found at Node {currentImbalance.val}
-                                </h5>
-                                <p className="font-bold text-2xl text-rose-800">
-                                    Required: <span className="underline decoration-rose-300 decoration-4 underline-offset-4">{currentImbalance.type} Case</span>
-                                </p>
-                                <p className="text-rose-700 mt-2 font-medium opacity-80">
-                                    Balance Factor is {currentImbalance.bf}. The height difference exceeds 1.
-                                </p>
-                            </div>
-                            <button 
-                                onClick={handleBalance}
-                                className="bg-rose-600 hover:bg-rose-700 text-white px-10 py-5 rounded-2xl font-black shadow-lg shadow-rose-200 transition-all flex items-center gap-3 shrink-0 uppercase tracking-tight"
-                            >
-                                <ShieldCheck size={24} /> Resolve with {currentImbalance.type}
-                            </button>
-                        </div>
-                        
-                        <div className="px-8 py-6 bg-white/50 border-t border-rose-100 grid md:grid-cols-2 gap-8">
-                            <div>
-                                <h6 className="font-black text-xs text-rose-900 uppercase tracking-widest mb-2">The Problem</h6>
-                                <p className="text-sm text-rose-800 leading-relaxed font-medium">
-                                    {ROTATION_INFO[currentImbalance.type].description}
-                                </p>
-                            </div>
-                            <div>
-                                <h6 className="font-black text-xs text-rose-900 uppercase tracking-widest mb-2">The Solution</h6>
-                                <p className="text-sm text-rose-800 leading-relaxed font-medium">
-                                    {ROTATION_INFO[currentImbalance.type].mechanism}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                <div className="rounded-[3rem] bg-gray-50 min-h-[550px] border-4 border-dashed border-gray-100 relative overflow-hidden flex items-center justify-center p-12 transition-all duration-500">
+                <div className="rounded-[3rem] bg-gray-50 min-h-[500px] border-4 border-dashed border-gray-100 relative overflow-hidden flex items-center justify-center p-12 mb-10">
                     <svg viewBox="0 0 400 450" className="w-full h-full overflow-visible">
-                        <g className="transition-all duration-700">{svgEdges}</g>
+                        <g>{svgEdges}</g>
                         {renderedNodes.map(n => (
                             <Node key={n.val} x={n.x} y={n.y} value={n.val} highlight={Math.abs(n.bf) > 1} label={`BF: ${n.bf}`} />
                         ))}
                     </svg>
                     {treeValues.length === 0 && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 gap-6">
-                            <div className="p-8 bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/50">
-                               <HelpCircle size={80} className="animate-pulse text-gray-100" />
-                            </div>
-                            <div className="text-center space-y-2">
-                                <p className="font-black tracking-widest uppercase text-gray-400">Your Canvas is Empty</p>
-                                <p className="text-sm text-gray-300 font-bold">Input a value to start the hierarchy</p>
-                            </div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 gap-4">
+                            <HelpCircle size={64} className="text-gray-200" />
+                            <p className="font-black uppercase tracking-widest">Input a value above</p>
                         </div>
                     )}
                 </div>
-            </Card>
 
-            <div className="grid md:grid-cols-2 gap-8">
-                {Object.entries(ROTATION_INFO).map(([key, info]) => (
-                    <div key={key} className="p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 hover:shadow-2xl transition-all group">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-xl group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                {key}
+                {currentImbalance ? (
+                    <div className="bg-rose-50 border-2 border-rose-100 rounded-[2.5rem] p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="flex items-center gap-4 border-b border-rose-100 pb-4">
+                            <div className="p-3 bg-rose-100 rounded-2xl text-rose-600">
+                                <AlertTriangle size={24} />
                             </div>
-                            <h4 className="text-2xl font-black text-gray-900">{info.title}</h4>
+                            <div>
+                                <h4 className="font-black text-rose-900 uppercase tracking-tighter text-xl">Imbalance Detected!</h4>
+                                <p className="text-rose-700 font-bold">Node {currentImbalance.val} has a Balance Factor of {currentImbalance.bf}</p>
+                            </div>
                         </div>
-                        <p className="text-gray-600 font-medium leading-relaxed mb-6">
-                            {info.description}
-                        </p>
-                        <div className="flex items-start gap-3 p-5 bg-indigo-50 rounded-2xl border border-indigo-100/50">
-                            <div className="p-1.5 bg-indigo-200 rounded-lg text-indigo-700 shrink-0">
-                                <ArrowRight size={14} />
-                            </div>
-                            <p className="text-xs text-indigo-800 font-bold leading-relaxed">
-                                <span className="uppercase tracking-widest text-[10px] block mb-1 opacity-60">Logic</span>
-                                {info.mechanism}
+
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {ROTATION_CASES.map(rotation => {
+                                const isRequired = currentImbalance.type === rotation.id;
+                                return (
+                                    <div key={rotation.id} className={`p-6 rounded-3xl border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-xl shadow-rose-100 ring-4 ring-rose-50' : 'bg-white/50 border-rose-100 opacity-60'}`}>
+                                        <div>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-black ${isRequired ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-700'}`}>{rotation.id}</span>
+                                                {isRequired && <Zap size={16} className="text-rose-500 animate-pulse" />}
+                                            </div>
+                                            <h5 className="font-black text-rose-900 mb-2">{rotation.title}</h5>
+                                            <p className="text-xs text-rose-700 leading-relaxed font-medium mb-4">{rotation.concept}</p>
+                                        </div>
+                                        {isRequired && (
+                                            <button 
+                                                onClick={handleApplyRotation}
+                                                className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-rose-200"
+                                            >
+                                                Apply <ArrowRight size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        
+                        <div className="p-6 bg-white rounded-2xl border border-rose-100">
+                            <h6 className="font-black text-xs text-rose-900 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <Info size={14} /> Solution Mechanism
+                            </h6>
+                            <p className="text-sm text-rose-700 leading-relaxed font-medium">
+                                {ROTATION_CASES.find(r => r.id === currentImbalance.type)?.mechanism}
                             </p>
                         </div>
                     </div>
-                ))}
-            </div>
+                ) : treeValues.length > 0 && (
+                    <div className="bg-emerald-50 border-2 border-emerald-100 rounded-[2.5rem] p-8 flex items-center gap-6">
+                        <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600">
+                            <CheckCircle2 size={32} />
+                        </div>
+                        <div>
+                            <h4 className="font-black text-emerald-900 uppercase tracking-tighter text-xl">Perfectly Balanced</h4>
+                            <p className="text-emerald-700 font-bold">Your AVL property is satisfied for all nodes.</p>
+                        </div>
+                    </div>
+                )}
+            </Card>
         </div>
     );
 };
