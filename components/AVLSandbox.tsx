@@ -53,6 +53,33 @@ export const AVLSandbox = () => {
     const [treeValues, setTreeValues] = useState<number[]>([]);
     const [inputVal, setInputVal] = useState("");
     const svgRef = useRef<SVGSVGElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Panning Logic
+    const isDragging = useRef(false);
+    const startX = useRef(0);
+    const startScrollLeft = useRef(0);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+      if (!scrollContainerRef.current) return;
+      isDragging.current = true;
+      startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
+      startScrollLeft.current = scrollContainerRef.current.scrollLeft;
+      scrollContainerRef.current.style.cursor = 'grabbing';
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+      if (!isDragging.current || !scrollContainerRef.current) return;
+      e.preventDefault();
+      const x = e.pageX - scrollContainerRef.current.offsetLeft;
+      const walk = (x - startX.current) * 1.5;
+      scrollContainerRef.current.scrollLeft = startScrollLeft.current - walk;
+    };
+
+    const stopDragging = () => {
+      isDragging.current = false;
+      if (scrollContainerRef.current) scrollContainerRef.current.style.cursor = 'grab';
+    };
 
     const root = useMemo(() => buildTree(treeValues), [treeValues]);
 
@@ -69,17 +96,17 @@ export const AVLSandbox = () => {
       const url = URL.createObjectURL(svgBlob);
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        canvas.width = 1400;
+        canvas.width = 1600;
         canvas.height = 1200;
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.fillStyle = "white";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 100, 100, 1200, 1000);
+          ctx.drawImage(img, 100, 100, 1400, 1000);
           const pngUrl = canvas.toDataURL("image/png");
           const downloadLink = document.createElement("a");
           downloadLink.href = pngUrl;
-          downloadLink.download = `avl-balancing.png`;
+          downloadLink.download = `avl-state.png`;
           downloadLink.click();
         }
         URL.revokeObjectURL(url);
@@ -112,7 +139,7 @@ export const AVLSandbox = () => {
 
         const layout = (node: BSTNode | null, x: number, y: number, level: number, availableWidth: number) => {
             if (!node) return;
-            const offset = Math.max(availableWidth / 2, 36);
+            const offset = Math.max(availableWidth / 2, 55);
             const hl = getHeight(node.left);
             const hr = getHeight(node.right);
             const bf = hl - hr;
@@ -125,16 +152,16 @@ export const AVLSandbox = () => {
             }
             nodes.push({ val: node.val, x, y, bf });
             if (node.left) {
-                edges.push(<Edge key={`${node.val}-l-${nodes.length}`} x1={x} y1={y} x2={x - offset} y2={y + 70} highlight={Math.abs(bf) > 1} />);
-                layout(node.left, x - offset, y + 70, level + 1, offset);
+                edges.push(<Edge key={`avl-edge-l-${node.val}`} x1={x} y1={y} x2={x - offset} y2={y + 90} highlight={Math.abs(bf) > 1} />);
+                layout(node.left, x - offset, y + 90, level + 1, offset);
             }
             if (node.right) {
-                edges.push(<Edge key={`${node.val}-r-${nodes.length}`} x1={x} y1={y} x2={x + offset} y2={y + 70} highlight={Math.abs(bf) > 1} />);
-                layout(node.right, x + offset, y + 70, level + 1, offset);
+                edges.push(<Edge key={`avl-edge-r-${node.val}`} x1={x} y1={y} x2={x + offset} y2={y + 90} highlight={Math.abs(bf) > 1} />);
+                layout(node.right, x + offset, y + 90, level + 1, offset);
             }
         };
 
-        if (root) layout(root, 350, 60, 1, 320);
+        if (root) layout(root, 600, 100, 1, 500); 
         return { renderedNodes: nodes, currentImbalance: detected, svgEdges: edges };
     }, [root]);
 
@@ -149,113 +176,113 @@ export const AVLSandbox = () => {
     };
 
     return (
-        <div className="space-y-4 sm:space-y-10">
-            <Card title="Interactive AVL Balancing" subtitle="Insert nodes and verify factors.">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4 sm:mb-8">
+        <div className="space-y-6 sm:space-y-12 w-full">
+            <Card title="AVL Sandbox" subtitle="Build and observe self-balancing trees. Drag horizontally to move.">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 sm:mb-10 w-full">
                     <input 
                       type="number" 
                       value={inputVal} 
                       onChange={(e) => setInputVal(e.target.value)} 
-                      placeholder="Val" 
-                      className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 sm:w-44 font-black text-base focus:ring-4 focus:ring-blue-100 outline-none transition-all" 
+                      placeholder="Insert Value" 
+                      className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-4 sm:w-64 font-black text-sm sm:text-lg focus:ring-8 focus:ring-blue-100 outline-none transition-all" 
                       onKeyDown={(e) => e.key === 'Enter' && addValue()} 
                     />
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <button 
                         onClick={addValue} 
-                        className="flex-1 sm:flex-none bg-blue-600 text-white px-5 py-3 rounded-xl font-black text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 sm:flex-none bg-blue-600 text-white px-8 py-4 rounded-xl font-black text-xs sm:text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
                       >
-                          <Plus size={16}/> ADD
+                          <Plus size={18}/> Insert
                       </button>
                       <button 
                         onClick={() => setTreeValues([])} 
-                        className="flex-1 sm:flex-none bg-white text-gray-400 border-2 border-gray-100 px-5 py-3 rounded-xl font-black text-xs hover:text-rose-600 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="flex-1 sm:flex-none bg-white text-gray-400 border-2 border-gray-100 px-6 py-4 rounded-xl font-black text-xs sm:text-sm hover:text-rose-600 transition-all active:scale-95 flex items-center justify-center gap-2"
                       >
-                          <Trash2 size={16}/> CLEAR
+                          <Trash2 size={18}/> Reset
                       </button>
                     </div>
                 </div>
 
-                <div className="relative group/avl overflow-hidden rounded-xl sm:rounded-[2rem] border-2 border-gray-100 bg-white shadow-inner">
-                  <div className="w-full h-[300px] sm:h-[550px] overflow-auto flex items-start justify-center cursor-grab active:cursor-grabbing scrollbar-hide">
-                      <div className="min-w-[700px] py-10 flex items-center justify-center">
+                <div className="relative rounded-2xl sm:rounded-[3rem] border-2 border-gray-100 bg-white shadow-inner w-full overflow-hidden">
+                  <div 
+                    ref={scrollContainerRef}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={stopDragging}
+                    onMouseLeave={stopDragging}
+                    className="w-full h-[360px] sm:h-[650px] overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-pan-x transition-all duration-300"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
+                  >
+                      <div className="min-w-[1200px] h-full flex items-start justify-center py-6">
                         <svg 
                           ref={svgRef} 
-                          viewBox="0 0 700 600" 
+                          viewBox="0 0 1200 800" 
                           className="w-full h-auto overflow-visible"
                         >
                             <g>{svgEdges}</g>
                             {renderedNodes.map((n, idx) => (
-                                <Node key={`${n.val}-${idx}`} x={n.x} y={n.y} value={n.val} highlight={Math.abs(n.bf) > 1} label={`BF: ${n.bf}`} />
+                                <Node key={`avl-node-${n.val}-${idx}`} x={n.x} y={n.y} value={n.val} highlight={Math.abs(n.bf) > 1} label={`BF: ${n.bf}`} />
                             ))}
                         </svg>
                       </div>
                       {treeValues.length === 0 && (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 gap-2 p-4 text-center pointer-events-none">
-                              <HelpCircle size={32} className="opacity-20" />
-                              <p className="font-black uppercase tracking-widest text-[8px]">Empty Tree</p>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 gap-3 p-10 text-center pointer-events-none">
+                              <HelpCircle size={48} className="opacity-10" />
+                              <p className="font-black uppercase tracking-[0.3em] text-[10px]">Tree Laboratory</p>
                           </div>
                       )}
                   </div>
                   
                   {treeValues.length > 0 && (
-                    <div className="absolute bottom-2 right-2 sm:top-6 sm:right-6 sm:bottom-auto z-20">
+                    <div className="absolute bottom-6 right-6 z-20">
                       <button 
                         onClick={downloadImage}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-100 shadow-xl rounded-xl text-gray-800 font-black text-[9px] uppercase tracking-tighter active:scale-95 group"
+                        className="flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-4 bg-white/90 backdrop-blur border border-gray-100 shadow-2xl rounded-xl text-gray-800 font-black text-[10px] uppercase tracking-tighter active:scale-95 transition-all group"
                       >
-                        <Download size={14} className="text-blue-500" /> PNG
+                        <Download size={14} className="text-blue-500" /> Export
                       </button>
                     </div>
                   )}
 
-                  <div className="absolute top-2 left-1/2 -translate-x-1/2 lg:hidden pointer-events-none bg-black/5 px-2 py-1 rounded-full flex items-center gap-1.5 text-[8px] font-bold text-gray-500 uppercase">
-                     <Move size={10} /> Swipe View
+                  <div className="absolute bottom-6 left-6 pointer-events-none bg-gray-950/5 px-3 py-2 rounded-full flex items-center gap-2 text-[9px] font-black text-gray-500 uppercase tracking-widest border border-white/40">
+                     <Move size={12} className="animate-pulse" /> Panning Enabled
                   </div>
                 </div>
 
-                {currentImbalance ? (
-                    <div className="bg-rose-50 border-2 border-rose-100 rounded-xl sm:rounded-[2rem] p-4 sm:p-8 mt-4 sm:mt-8 space-y-4 sm:space-y-6">
-                        <div className="flex items-center gap-2 sm:gap-3 border-b border-rose-100 pb-3 sm:pb-4">
-                            <div className="p-2 bg-rose-100 rounded-lg text-rose-600"><AlertTriangle size={18} /></div>
+                {currentImbalance && (
+                    <div className="bg-rose-50 border-2 border-rose-100 rounded-2xl sm:rounded-[3rem] p-5 sm:p-10 mt-6 sm:mt-10 space-y-6 sm:space-y-10 w-full">
+                        <div className="flex items-center gap-4 sm:gap-6 border-b border-rose-100 pb-5 sm:pb-8">
+                            <div className="p-3 bg-rose-100 rounded-2xl text-rose-600 shadow-sm"><AlertTriangle size={24} /></div>
                             <div>
-                                <h4 className="font-black text-rose-900 uppercase tracking-tighter text-xs sm:text-lg">Balance Needed</h4>
-                                <p className="text-rose-700 font-bold text-[8px] sm:text-xs">Node {currentImbalance.val} is heavy (BF: {currentImbalance.bf})</p>
+                                <h4 className="font-black text-rose-900 uppercase tracking-tighter text-sm sm:text-2xl">Imbalance Detected</h4>
+                                <p className="text-rose-700 font-bold text-[10px] sm:text-base opacity-80">Rotation required at Node {currentImbalance.val}.</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-6">
                             {ROTATION_CASES.map(rotation => {
                                 const isRequired = currentImbalance.type === rotation.id;
                                 return (
-                                    <div key={rotation.id} className={`p-3 sm:p-4 rounded-xl border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-xl scale-[1.02]' : 'bg-white/50 border-rose-100 opacity-60'}`}>
-                                        <div className="mb-2 sm:mb-4">
-                                            <div className="flex items-center justify-between mb-1 sm:mb-2">
-                                                <span className={`px-1.5 py-0.5 rounded-lg text-[8px] sm:text-[10px] font-black uppercase ${isRequired ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-700'}`}>{rotation.id}</span>
-                                                {isRequired && <Zap size={12} className="text-rose-500" />}
+                                    <div key={rotation.id} className={`p-5 sm:p-8 rounded-[2rem] border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-2xl scale-[1.02] z-10' : 'bg-white/50 border-rose-100 opacity-60'}`}>
+                                        <div className="mb-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <span className={`px-2 py-1 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest ${isRequired ? 'bg-rose-600 text-white shadow-lg shadow-rose-100' : 'bg-rose-100 text-rose-700'}`}>{rotation.id}</span>
+                                                {isRequired && <Zap size={14} className="text-rose-500 animate-pulse" />}
                                             </div>
-                                            <h5 className="font-black text-rose-900 mb-1 text-[10px] sm:text-sm leading-tight">{rotation.title}</h5>
-                                            <p className="text-[8px] sm:text-[10px] text-rose-700 leading-tight font-medium">{rotation.concept}</p>
+                                            <h5 className="font-black text-rose-900 mb-2 text-sm sm:text-lg leading-tight">{rotation.title}</h5>
+                                            <p className="text-[10px] sm:text-xs text-rose-700 leading-relaxed font-bold opacity-70">{rotation.concept}</p>
                                         </div>
                                         {isRequired && (
                                             <button 
                                               onClick={handleApplyRotation} 
-                                              className="w-full py-2 bg-rose-600 text-white rounded-lg font-black text-[9px] uppercase flex items-center justify-center gap-1 shadow-sm active:scale-95 transition-all"
+                                              className="w-full py-4 bg-rose-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-rose-100 hover:bg-rose-700 active:scale-95 transition-all"
                                             >
-                                                Fix <ArrowRight size={12} />
+                                                Apply <ArrowRight size={14} />
                                             </button>
                                         )}
                                     </div>
                                 );
                             })}
-                        </div>
-                    </div>
-                ) : treeValues.length > 0 && (
-                    <div className="bg-emerald-50 border-2 border-emerald-100 rounded-xl sm:rounded-[2rem] p-4 sm:p-6 mt-4 sm:mt-8 flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><CheckCircle2 size={20} /></div>
-                        <div>
-                            <h4 className="font-black text-emerald-900 uppercase tracking-tighter text-xs sm:text-lg">Stable AVL</h4>
-                            <p className="text-emerald-700 font-bold text-[8px] sm:text-xs">Tree satisfies balance requirements.</p>
                         </div>
                     </div>
                 )}

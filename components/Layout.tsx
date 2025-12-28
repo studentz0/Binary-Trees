@@ -16,28 +16,28 @@ const navItems = [
 ];
 
 export const Section = ({ title, icon: Icon, children, id }: { title: string; icon: any; children?: React.ReactNode; id: string }) => (
-  <section id={id} className="mb-10 sm:mb-20 lg:mb-24 scroll-mt-20 sm:scroll-mt-32 section-target">
+  <section id={id} className="mb-10 sm:mb-20 lg:mb-24 scroll-mt-20 sm:scroll-mt-32 section-target w-full">
     <div className="flex items-center gap-3 mb-6 sm:mb-10 border-b border-gray-100 pb-3 sm:pb-6">
       <div className="p-2 bg-blue-100 rounded-lg text-blue-600 shadow-sm shrink-0">
         <Icon size={18} className="sm:w-6 sm:h-6" />
       </div>
       <h2 className="text-xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight leading-none">{title}</h2>
     </div>
-    <div className="space-y-6 sm:space-y-10">
+    <div className="space-y-6 sm:space-y-10 w-full">
       {children}
     </div>
   </section>
 );
 
 export const Card = ({ title, subtitle, children, className = "" }: { title?: string; subtitle?: string; children?: React.ReactNode; className?: string }) => (
-  <div className={`bg-white rounded-xl sm:rounded-[2.5rem] shadow-xl shadow-gray-200/20 border border-gray-100 overflow-hidden ${className}`}>
+  <div className={`bg-white rounded-xl sm:rounded-[2.5rem] shadow-xl shadow-gray-200/20 border border-gray-100 overflow-hidden w-full max-w-full ${className}`}>
     {(title || subtitle) && (
       <div className="px-4 py-4 sm:px-10 sm:py-8 border-b border-gray-100 bg-gray-50/50">
         {title && <h3 className="font-black text-gray-900 text-base sm:text-2xl leading-tight tracking-tight">{title}</h3>}
         {subtitle && <p className="text-[10px] sm:text-base text-gray-500 mt-1 font-medium leading-relaxed">{subtitle}</p>}
       </div>
     )}
-    <div className="p-4 sm:p-10">
+    <div className="p-4 sm:p-10 w-full overflow-hidden">
       {children}
     </div>
   </div>
