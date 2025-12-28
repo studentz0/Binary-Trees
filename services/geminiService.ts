@@ -1,23 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 
-/**
- * Service to handle Gemini API calls for code generation and quiz questions.
- * Adheres to the latest SDK guidelines.
- */
+// API Key is obtained directly from process.env.API_KEY as per guidelines.
+// Always use a new GoogleGenAI instance right before the call to ensure the latest configuration.
 export const generateContent = async (prompt: string, isJson: boolean = false) => {
-  // Always initialize a new instance before making an API call to ensure the latest key is used.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
-      config: isJson ? { 
-        responseMimeType: "application/json"
-      } : undefined
+      config: isJson ? { responseMimeType: "application/json" } : undefined
     });
 
-    // Access the .text property directly as per the coding guidelines.
+    // Directly access the .text property from GenerateContentResponse.
     return response.text || "";
   } catch (error) {
     console.error("Gemini API Error:", error);

@@ -28,9 +28,9 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
   const textColor = ghost ? "fill-gray-300" : (highlight || type === 'root') ? "fill-white" : "fill-gray-800";
 
   return (
-    <g onClick={onClick} className={`transition-all duration-500 ease-in-out ${onClick ? 'cursor-pointer hover:scale-110 origin-center' : ''}`} style={{ transformOrigin: `${x}px ${y}px` }}>
+    <g onClick={onClick} className={`transition-all duration-500 ease-in-out ${onClick ? 'cursor-pointer hover:scale-110 active:scale-95 origin-center' : ''}`} style={{ transformOrigin: `${x}px ${y}px` }}>
       <circle cx={x} cy={y} r="18" className={`${getColors()} stroke-2 transition-all duration-300`} />
-      <text x={x} y={y} dy=".35em" textAnchor="middle" className={`text-xs sm:text-sm font-extrabold pointer-events-none ${textColor} font-mono`}>
+      <text x={x} y={y} dy=".35em" textAnchor="middle" className={`text-[10px] sm:text-sm font-extrabold pointer-events-none ${textColor} font-mono`}>
         {value}
       </text>
       {label && (
@@ -45,6 +45,6 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
 export const Edge: React.FC<{ x1: number; y1: number; x2: number; y2: number; highlight?: boolean }> = ({ x1, y1, x2, y2, highlight }) => (
   <line 
     x1={x1} y1={y1} x2={x2} y2={y2} 
-    className={`stroke-2 ${highlight ? 'stroke-blue-500 stroke-[3px]' : 'stroke-gray-200'} transition-all duration-500 ease-in-out`} 
+    className={`stroke-[1.5] sm:stroke-2 ${highlight ? 'stroke-blue-500 stroke-[3px]' : 'stroke-gray-200'} transition-all duration-500 ease-in-out`} 
   />
 );

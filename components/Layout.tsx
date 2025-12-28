@@ -14,12 +14,12 @@ const navItems = [
 ];
 
 export const Section = ({ title, icon: Icon, children, id }: { title: string; icon: any; children?: React.ReactNode; id: string }) => (
-  <section id={id} className="mb-16 sm:mb-24 scroll-mt-24">
-    <div className="flex items-center gap-3 mb-6 sm:mb-8 border-b border-gray-100 pb-4">
-      <div className="p-2.5 sm:p-3 bg-blue-100 rounded-lg sm:rounded-xl text-blue-600 shadow-sm">
-        <Icon size={22} />
+  <section id={id} className="mb-12 sm:mb-20 lg:mb-24 scroll-mt-24">
+    <div className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8 border-b border-gray-100 pb-3 sm:pb-4">
+      <div className="p-2 sm:p-3 bg-blue-100 rounded-lg sm:rounded-xl text-blue-600 shadow-sm">
+        <Icon size={20} className="sm:w-6 sm:h-6" />
       </div>
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">{title}</h2>
+      <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">{title}</h2>
     </div>
     <div className="space-y-6 sm:space-y-8">
       {children}
@@ -28,14 +28,14 @@ export const Section = ({ title, icon: Icon, children, id }: { title: string; ic
 );
 
 export const Card = ({ title, subtitle, children, className = "" }: { title?: string; subtitle?: string; children?: React.ReactNode; className?: string }) => (
-  <div className={`bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden ${className}`}>
+  <div className={`bg-white rounded-xl sm:rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden ${className}`}>
     {(title || subtitle) && (
       <div className="px-5 py-4 sm:px-8 sm:py-6 border-b border-gray-100 bg-gray-50/50">
-        {title && <h3 className="font-bold text-gray-900 text-lg sm:text-xl">{title}</h3>}
-        {subtitle && <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">{subtitle}</p>}
+        {title && <h3 className="font-bold text-gray-900 text-base sm:text-xl leading-tight">{title}</h3>}
+        {subtitle && <p className="text-[10px] sm:text-sm text-gray-500 mt-1 font-medium">{subtitle}</p>}
       </div>
     )}
-    <div className="p-5 sm:p-8">
+    <div className="p-4 sm:p-8">
       {children}
     </div>
   </div>
@@ -43,19 +43,16 @@ export const Card = ({ title, subtitle, children, className = "" }: { title?: st
 
 export const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => (
   <>
-    {/* Mobile Overlay */}
-    {isOpen && (
-      <div 
-        className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity" 
-        onClick={onClose}
-      />
-    )}
+    {/* Mobile Backdrop */}
+    <div 
+      className={`fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
+      onClick={onClose}
+    />
     
     <aside className={`
-      ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
-      lg:translate-x-0 fixed lg:sticky inset-y-0 left-0 z-50 
-      w-72 lg:w-72 bg-white border-r border-gray-100 overflow-y-auto 
-      transition-transform duration-300 ease-in-out lg:block lg:h-screen
+      fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-100 overflow-y-auto transform transition-transform duration-300 ease-in-out
+      lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
+      ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
     `}>
       <div className="p-6 sm:p-8">
         <div className="flex justify-between items-center mb-10">
@@ -67,7 +64,7 @@ export const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           </div>
           <button 
             onClick={onClose} 
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 border border-gray-50"
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 border border-gray-50 active:scale-95"
           >
             <X size={20}/>
           </button>
@@ -87,8 +84,8 @@ export const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
         </nav>
         
         <div className="mt-12 p-5 sm:p-6 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl border border-indigo-100/50">
-           <p className="text-xs font-bold text-indigo-800 uppercase tracking-widest mb-2">Did you know?</p>
-           <p className="text-xs text-indigo-600/80 leading-relaxed font-medium">Binary Search Trees allow search, insert, and delete in O(log n) time if balanced!</p>
+           <p className="text-[10px] font-bold text-indigo-800 uppercase tracking-widest mb-2">Algorithm Fact</p>
+           <p className="text-[11px] text-indigo-600/80 leading-relaxed font-medium">Binary Search Trees allow search, insert, and delete in O(log n) time if kept balanced!</p>
         </div>
       </div>
     </aside>

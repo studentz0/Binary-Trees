@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Node, Edge } from './TreeVisuals';
-import { Play, RotateCcw, Pause, Plus } from 'lucide-react';
+import { Play, RotateCcw, Pause } from 'lucide-react';
 
 export const TraversalDemo = () => {
   const [traversalType, setTraversalType] = useState<'preorder' | 'inorder' | 'postorder'>('inorder');
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeStep, setActiveStep] = useState(-1);
-  const [customInput, setCustomInput] = useState<string>("A, B, C, D, E, F, G");
+  const [customInput, setCustomInput] = useState<string>("A, B, C, D, E");
 
   const nodes = useMemo(() => {
     const values = customInput.split(',').map(v => v.trim()).filter(v => v !== "");
@@ -29,7 +28,6 @@ export const TraversalDemo = () => {
     const seq: number[] = [];
     const traverse = (idx: number) => {
       if (idx >= nodes.length) return;
-      
       if (traversalType === 'preorder') seq.push(nodes[idx].id);
       traverse(2 * idx + 1);
       if (traversalType === 'inorder') seq.push(nodes[idx].id);
@@ -51,7 +49,7 @@ export const TraversalDemo = () => {
           }
           return prev + 1;
         });
-      }, 1000);
+      }, 800);
     }
     return () => clearInterval(timer);
   }, [isPlaying, sequence]);
@@ -64,37 +62,37 @@ export const TraversalDemo = () => {
   const currentNodeId = activeStep >= 0 ? sequence[activeStep] : null;
 
   return (
-    <div className="space-y-12">
-      <div className="mb-8">
-        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">
-            Build Your Tree (Level Order)
+    <div className="space-y-8 sm:space-y-12">
+      <div className="mb-6 sm:mb-8">
+        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 sm:mb-3">
+            Build Tree (Level Order)
         </label>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input 
             type="text" 
             value={customInput}
             onChange={(e) => { setCustomInput(e.target.value); reset(); }}
-            className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-4 text-xl font-mono focus:ring-4 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all"
-            placeholder="A, B, C, D..."
+            className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 sm:py-4 text-base sm:text-xl font-mono focus:ring-4 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all"
+            placeholder="A, B, C..."
           />
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 bg-gray-50 p-2 rounded-2xl w-fit border border-gray-100 mx-auto">
+      <div className="flex bg-gray-100/50 p-1 rounded-xl border border-gray-100 mx-auto w-full max-w-sm">
         {(['preorder', 'inorder', 'postorder'] as const).map(t => (
           <button
             key={t}
             onClick={() => { setTraversalType(t); reset(); }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-black capitalize transition-all ${traversalType === t ? 'bg-white text-blue-700 shadow-md border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
+            className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-sm font-black capitalize transition-all ${traversalType === t ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
           >
             {t}
           </button>
         ))}
       </div>
       
-      <div className="grid lg:grid-cols-2 gap-16 items-center">
-        <div className="bg-white rounded-[2.5rem] p-10 shadow-inner border border-gray-50 flex items-center justify-center min-h-[300px]">
-          <svg viewBox="0 0 400 200" className="w-full h-auto overflow-visible">
+      <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+        <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-10 shadow-inner border border-gray-50 flex items-center justify-center min-h-[200px] sm:min-h-[300px] overflow-hidden">
+          <svg viewBox="0 0 400 200" className="w-full h-auto overflow-visible max-w-[320px]">
             {nodes.map(n => {
                if (n.p === null) return null;
                const parent = nodes.find(p => p.id === n.p);
@@ -114,34 +112,34 @@ export const TraversalDemo = () => {
           </svg>
         </div>
 
-        <div className="space-y-8">
-          <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100 shadow-sm">
-            <h4 className="font-black text-gray-900 mb-6 text-2xl capitalize">{traversalType} Path</h4>
-            <div className="flex flex-wrap items-center gap-3">
+        <div className="space-y-6 sm:space-y-8">
+          <div className="p-5 sm:p-8 bg-gray-50 rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-sm">
+            <h4 className="font-black text-gray-900 mb-4 sm:mb-6 text-lg sm:text-2xl capitalize leading-tight">{traversalType} Path</h4>
+            <div className="flex flex-wrap items-center gap-2">
                {sequence.map((id, idx) => {
                  const isActive = idx === activeStep;
                  const isPassed = idx < activeStep;
                  const node = nodes.find(n => n.id === id);
                  return (
                     <div key={idx} className="flex items-center">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-mono text-xl font-black transition-all duration-500 ${isActive ? 'bg-blue-600 text-white scale-125 shadow-xl rotate-3' : isPassed ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-white text-gray-300 border border-gray-100'}`}>
+                      <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center font-mono text-sm sm:text-xl font-black transition-all duration-500 ${isActive ? 'bg-blue-600 text-white scale-110 shadow-lg' : isPassed ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-white text-gray-300 border border-gray-100'}`}>
                         {node?.val || '?'}
                       </div>
-                      {idx < sequence.length - 1 && <div className={`h-0.5 w-4 mx-1 ${isPassed ? 'bg-emerald-200' : 'bg-gray-100'}`} />}
+                      {idx < sequence.length - 1 && <div className={`h-px w-2 sm:w-4 mx-0.5 sm:mx-1 ${isPassed ? 'bg-emerald-200' : 'bg-gray-100'}`} />}
                     </div>
                  );
                })}
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4">
              <button 
                onClick={() => setIsPlaying(!isPlaying)}
-               className={`flex-1 flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black text-lg transition-all shadow-xl ${isPlaying ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'}`}
+               className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 px-4 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-sm sm:text-lg transition-all shadow-lg active:scale-95 ${isPlaying ? 'bg-amber-100 text-amber-700' : 'bg-blue-600 text-white'}`}
              >
-               {isPlaying ? <><Pause size={24} /> Pause</> : activeStep >= sequence.length - 1 ? <><RotateCcw size={24} /> Replay</> : <><Play size={24} /> Start Animation</>}
+               {isPlaying ? <><Pause size={20} /> Pause</> : activeStep >= sequence.length - 1 ? <><RotateCcw size={20} /> Replay</> : <><Play size={20} /> Play</>}
              </button>
-             <button onClick={reset} className="p-5 text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 rounded-2xl transition-all border border-gray-100 shadow-sm"><RotateCcw size={24} /></button>
+             <button onClick={reset} className="p-4 sm:p-5 text-gray-400 bg-gray-50 hover:bg-gray-100 rounded-xl sm:rounded-2xl border border-gray-100 active:scale-95"><RotateCcw size={20} /></button>
           </div>
         </div>
       </div>

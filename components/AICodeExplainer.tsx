@@ -11,11 +11,11 @@ export const AICodeExplainer = ({ topic }: { topic: string }) => {
     if (content) return;
     setLoading(true);
     try {
-      const prompt = `Write a concise, high-quality Python implementation of ${topic} in a Binary Tree. Include brief comments explaining the logic. Do not include markdown code fences (like \`\`\`), just the raw code text.`;
+      const prompt = `Write a concise, clean implementation of ${topic} in Python. Include very brief comments. Output raw code only, no markdown formatting.`;
       const result = await generateContent(prompt);
       setContent(result.replace(/```python/g, '').replace(/```/g, '').trim());
     } catch (e) {
-      setContent("Error generating code. Please try again.");
+      setContent("Error generating code. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -25,7 +25,7 @@ export const AICodeExplainer = ({ topic }: { topic: string }) => {
     <div className="mt-4 border border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
       <button 
         onClick={() => { setIsOpen(!isOpen); if (!isOpen) fetchCode(); }}
-        className="w-full flex items-center justify-between p-4 bg-indigo-50/50 hover:bg-indigo-100 text-indigo-700 transition-colors"
+        className="w-full flex items-center justify-between p-4 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 transition-colors"
       >
         <span className="flex items-center gap-2 font-bold text-sm">
           <Sparkles size={16} className="text-indigo-500" />
@@ -35,14 +35,14 @@ export const AICodeExplainer = ({ topic }: { topic: string }) => {
       </button>
       
       {isOpen && (
-        <div className="p-4 sm:p-6 bg-gray-900 text-gray-100 font-mono text-[10px] sm:text-xs overflow-x-auto relative min-h-[120px]">
+        <div className="p-6 bg-gray-900 text-gray-100 font-mono text-xs overflow-x-auto relative min-h-[120px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-8 text-indigo-300">
               <Loader2 className="animate-spin mb-2" size={24} />
-              <p className="font-sans text-xs">Gemini is writing code...</p>
+              <p className="font-sans">Gemini is thinking...</p>
             </div>
           ) : (
-            <pre className="leading-relaxed whitespace-pre-wrap sm:whitespace-pre">{content}</pre>
+            <pre className="leading-relaxed">{content}</pre>
           )}
         </div>
       )}
