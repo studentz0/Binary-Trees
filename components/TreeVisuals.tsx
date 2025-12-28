@@ -35,12 +35,12 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
       <circle 
         cx={x} 
         cy={y} 
-        r="16" 
+        r="14" 
         style={{ 
           fill: style.fill, 
           stroke: style.stroke, 
           strokeWidth: '2px',
-          transition: 'all 0.3s ease',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           ...(style.strokeDasharray ? { strokeDasharray: style.strokeDasharray } : {})
         }} 
       />
@@ -51,10 +51,11 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
         textAnchor="middle" 
         style={{ 
           fill: textColor, 
-          fontSize: '11px', 
+          fontSize: '10px', 
           fontWeight: '900', 
           fontFamily: 'JetBrains Mono, monospace',
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          transition: 'fill 0.3s ease'
         }}
       >
         {value}
@@ -62,11 +63,11 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
       {label && (
         <text 
           x={x} 
-          y={y + 28} 
+          y={y + 26} 
           textAnchor="middle" 
           style={{ 
             fill: '#94a3b8', 
-            fontSize: '8px', 
+            fontSize: '7px', 
             fontWeight: '900', 
             textTransform: 'uppercase', 
             letterSpacing: '0.05em',
