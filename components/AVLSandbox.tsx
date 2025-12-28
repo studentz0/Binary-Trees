@@ -46,7 +46,6 @@ const buildTree = (values: number[]): BSTNode | null => {
     return rootNode;
 };
 
-// Finds the deepest node where |BF| > 1
 const findDeepestImbalance = (node: BSTNode | null): ImbalanceInfo | null => {
     if (!node) return null;
     const leftRes = findDeepestImbalance(node.left);
@@ -109,28 +108,25 @@ export const AVLSandbox = () => {
 
     const downloadImage = () => {
       if (!svgRef.current) return;
-      const svg = svgRef.current;
       const serializer = new XMLSerializer();
+      const svg = svgRef.current;
       let source = serializer.serializeToString(svg);
-      if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-      }
       const img = new Image();
       const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(svgBlob);
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        canvas.width = 1200;
-        canvas.height = 800;
+        canvas.width = 1600;
+        canvas.height = 1000;
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.fillStyle = "white";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, 1200, 800);
+          ctx.drawImage(img, 0, 0, 1600, 1000);
           const pngUrl = canvas.toDataURL("image/png");
           const downloadLink = document.createElement("a");
           downloadLink.href = pngUrl;
-          downloadLink.download = `tree-master-avl.png`;
+          downloadLink.download = `avl-balancing-diagram.png`;
           downloadLink.click();
         }
         URL.revokeObjectURL(url);
@@ -147,23 +143,23 @@ export const AVLSandbox = () => {
     const root = useMemo(() => buildTree(treeValues), [treeValues]);
 
     const handleApplyRotation = () => {
-        // Simple balance implementation: Rebuild as balanced BST
         const sorted = [...treeValues].sort((a, b) => a - b);
-        const getBalancedOrder = (arr: number[]): number[] => {
-            if (arr.length === 0) return [];
-            const mid = Math.floor(arr.length / 2);
-            const res = [arr[mid]];
-            const left = getBalancedOrder(arr.slice(0, mid));
-            const right = getBalancedOrder(arr.slice(mid + 1));
-            // Interleave children for level-order style insertion
-            const maxLen = Math.max(left.length, right.length);
-            for(let i=0; i<maxLen; i++) {
-                if(left[i] !== undefined) res.push(left[i]);
-                if(right[i] !== undefined) res.push(right[i]);
+        // Correct level-order construction for a balanced tree
+        const getBalancedInsertionOrder = (arr: number[]): number[] => {
+            const result: number[] = [];
+            const queue: [number, number][] = [[0, arr.length - 1]];
+            while (queue.length > 0) {
+              const [left, right] = queue.shift()!;
+              if (left > right) continue;
+              const mid = Math.floor((left + right) / 2);
+              result.push(arr[mid]);
+              queue.push([left, mid - 1]);
+              queue.push([mid + 1, right]);
             }
-            return res;
+            return result;
         };
-        setTreeValues(getBalancedOrder(sorted));
+        const balancedOrder = getBalancedInsertionOrder(sorted);
+        setTreeValues(balancedOrder);
     };
 
     const visualization = useMemo<VisualData>(() => {
@@ -173,7 +169,8 @@ export const AVLSandbox = () => {
 
         const layout = (node: BSTNode | null, x: number, y: number, level: number, availableWidth: number) => {
             if (!node) return;
-            const offset = Math.max(availableWidth / 2, 40);
+            // Compact horizontal offset: logarithmic or scaled reduction
+            const offset = Math.max(availableWidth / 2, 28);
             const hl = getHeight(node.left);
             const hr = getHeight(node.right);
             const bf = hl - hr;
@@ -189,7 +186,7 @@ export const AVLSandbox = () => {
             }
         };
 
-        if (root) layout(root, 1000, 80, 1, 400); 
+        if (root) layout(root, 1000, 60, 1, 300); // Reduced starting availableWidth for horizontal compaction
         return { renderedNodes: nodes, currentImbalance: detected, svgEdges: edges };
     }, [root]);
 
@@ -197,7 +194,7 @@ export const AVLSandbox = () => {
 
     const addValue = () => {
         const val = parseInt(inputVal);
-        if (!isNaN(val)) {
+        if (!isNaN(val) && !treeValues.includes(val)) {
             setTreeValues([...treeValues, val]);
             setInputVal("");
         }
@@ -209,14 +206,14 @@ export const AVLSandbox = () => {
 
     return (
         <div className="space-y-8 w-full">
-            <Card title="Interactive AVL Sandbox" subtitle="Construct a tree and watch balance factors update. Drag to explore.">
+            <Card title="Interactive AVL Sandbox" subtitle="Construct balanced trees. This view is compact and optimized for all sizes.">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 w-full">
                     <input 
                       type="number" 
                       value={inputVal} 
                       onChange={(e) => setInputVal(e.target.value)} 
-                      placeholder="Insert Node Value" 
-                      className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-4 font-black text-sm sm:text-lg outline-none focus:border-blue-300 transition-all" 
+                      placeholder="Insert Node" 
+                      className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-4 font-black text-sm sm:text-lg outline-none focus:border-blue-400 transition-all" 
                       onKeyDown={(e) => e.key === 'Enter' && addValue()} 
                     />
                     <div className="flex gap-2 w-full sm:w-auto">
@@ -239,7 +236,7 @@ export const AVLSandbox = () => {
                     onTouchStart={(e) => handleDragStart(e.touches[0].pageX, e.touches[0].pageY)}
                     onTouchMove={(e) => handleDragMove(e.touches[0].pageX, e.touches[0].pageY)}
                     onTouchEnd={stopDragging}
-                    className="w-full h-[400px] sm:h-[550px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-none bg-[radial-gradient(#f8fafc_1px,transparent_1px)] [background-size:20px_20px]"
+                    className="w-full h-[350px] sm:h-[500px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-none bg-[radial-gradient(#f1f5f9_1px,transparent_1px)] [background-size:20px_20px]"
                   >
                       <div className="w-[2000px] h-[1000px] relative">
                         <svg 
@@ -256,7 +253,7 @@ export const AVLSandbox = () => {
                       {treeValues.length === 0 && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 pointer-events-none">
                               <HelpCircle size={48} className="opacity-10 mb-2" />
-                              <p className="font-black uppercase tracking-[0.2em] text-[10px]">Canvas Empty</p>
+                              <p className="font-black uppercase tracking-[0.2em] text-[10px]">Canvas Ready</p>
                           </div>
                       )}
                   </div>
@@ -273,7 +270,7 @@ export const AVLSandbox = () => {
                   </div>
 
                   <div className="absolute bottom-6 left-6 pointer-events-none bg-gray-900/10 backdrop-blur px-3 py-2 rounded-full flex items-center gap-2 text-[9px] font-black text-gray-600 uppercase tracking-widest border border-white/40">
-                     <Move size={12} className="animate-pulse" /> 2D Roam Active
+                     <Move size={12} className="animate-pulse" /> Free-Roam Active
                   </div>
                 </div>
 

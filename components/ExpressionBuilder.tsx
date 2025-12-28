@@ -31,19 +31,15 @@ export const ExpressionBuilder = () => {
 
   const handleDragMove = (x: number, y: number) => {
     if (!isDragging.current || !scrollContainerRef.current) return;
-    const currentX = x - scrollContainerRef.current.offsetLeft;
-    const currentY = y - scrollContainerRef.current.offsetTop;
-    const walkX = (currentX - startPos.current.x);
-    const walkY = (currentY - startPos.current.y);
+    const walkX = (x - scrollContainerRef.current.offsetLeft - startPos.current.x);
+    const walkY = (y - scrollContainerRef.current.offsetTop - startPos.current.y);
     scrollContainerRef.current.scrollLeft = startScroll.current.left - walkX;
     scrollContainerRef.current.scrollTop = startScroll.current.top - walkY;
   };
 
   const stopDragging = () => {
     isDragging.current = false;
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = 'grab';
-    }
+    if (scrollContainerRef.current) scrollContainerRef.current.style.cursor = 'grab';
   };
 
   const downloadImage = () => {
@@ -51,25 +47,22 @@ export const ExpressionBuilder = () => {
     const svg = svgRef.current;
     const serializer = new XMLSerializer();
     let source = serializer.serializeToString(svg);
-    if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-    }
     const img = new Image();
     const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(svgBlob);
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = 1200;
-      canvas.height = 800;
+      canvas.width = 1600;
+      canvas.height = 1000;
       const ctx = canvas.getContext("2d");
       if (ctx) {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, 1200, 800);
+        ctx.drawImage(img, 0, 0, 1600, 1000);
         const pngUrl = canvas.toDataURL("image/png");
         const downloadLink = document.createElement("a");
         downloadLink.href = pngUrl;
-        downloadLink.download = `expression-tree.png`;
+        downloadLink.download = `expression-tree-diagram.png`;
         downloadLink.click();
       }
       URL.revokeObjectURL(url);
@@ -136,21 +129,21 @@ export const ExpressionBuilder = () => {
       const assignCoords = (node: any, x: number, y: number, level: number, parentId: number | null, availableWidth: number) => {
          if (!node) return;
          const currentId = idCounter++;
-         const offset = Math.max(availableWidth / 2, 40);
+         const offset = Math.max(availableWidth / 2, 35); // Optimized horizontal spread
          nodeList.push({ id: currentId, val: node.val, type: node.type, x: x, y: y, p: parentId });
          if (node.left) assignCoords(node.left, x - offset, y + 60, level + 1, currentId, offset);
          if (node.right) assignCoords(node.right, x + offset, y + 60, level + 1, currentId, offset);
       };
 
-      assignCoords(root, 1000, 80, 1, null, 400);
+      assignCoords(root, 1000, 60, 1, null, 300); // More compact starting width
       setNodes(nodeList);
       setError(null);
       setTimeout(centerView, 50);
-    } catch (err) { setError("Syntax error."); }
+    } catch (err) { setError("Parsing error."); }
   }, [expression]);
 
   return (
-    <Card title="Expression Architecture" subtitle="Compile infix math into structural trees. Compact graph rendering enabled.">
+    <Card title="Expression Architecture" subtitle="Structural diagrams for complex arithmetic logic. Compact view enabled.">
       <div className="mb-6 w-full">
         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
             Infix Expression
@@ -179,7 +172,7 @@ export const ExpressionBuilder = () => {
           onTouchStart={(e) => handleDragStart(e.touches[0].pageX, e.touches[0].pageY)}
           onTouchMove={(e) => handleDragMove(e.touches[0].pageX, e.touches[0].pageY)}
           onTouchEnd={stopDragging}
-          className="w-full h-[400px] sm:h-[550px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-none bg-[radial-gradient(#f1f5f9_1px,transparent_1px)] [background-size:20px_20px]"
+          className="w-full h-[350px] sm:h-[500px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-none bg-[radial-gradient(#f8fafc_1px,transparent_1px)] [background-size:20px_20px]"
         >
           <div className="w-[2000px] h-[1000px] relative">
             <svg 
@@ -218,7 +211,7 @@ export const ExpressionBuilder = () => {
         </div>
 
         <div className="absolute bottom-6 left-6 pointer-events-none bg-gray-900/10 backdrop-blur px-3 py-2 rounded-full flex items-center gap-2 text-[9px] font-black text-gray-600 uppercase tracking-widest border border-white/40">
-           <Move size={12} className="animate-pulse" /> 2D Panning Active
+           <Move size={12} className="animate-pulse" /> 2D Roam Active
         </div>
       </div>
     </Card>
