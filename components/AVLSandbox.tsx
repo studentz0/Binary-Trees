@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from './Layout';
 import { Node, Edge } from './TreeVisuals';
-import { AlertTriangle, Plus, Trash2, ShieldCheck, HelpCircle, Info, RotateCcw, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, HelpCircle, Info, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface BSTNode {
     val: number;
@@ -66,6 +66,12 @@ const buildTree = (values: number[]): BSTNode | null => {
     return rootNode;
 };
 
+interface VisualData {
+  renderedNodes: { val: number; x: number; y: number; bf: number }[];
+  currentImbalance: ImbalanceInfo | null;
+  svgEdges: React.ReactNode[];
+}
+
 export const AVLSandbox = () => {
     const [treeValues, setTreeValues] = useState<number[]>([]);
     const [inputVal, setInputVal] = useState("");
@@ -90,9 +96,9 @@ export const AVLSandbox = () => {
         setTreeValues(getBalancedOrder(sorted));
     };
 
-    const visualization = useMemo(() => {
-        const nodes: any[] = [];
-        const edges: any[] = [];
+    const visualization = useMemo<VisualData>(() => {
+        const nodes: { val: number; x: number; y: number; bf: number }[] = [];
+        const edges: React.ReactNode[] = [];
         let detected: ImbalanceInfo | null = null;
 
         const layout = (node: BSTNode | null, x: number, y: number, level: number, availableWidth: number) => {
@@ -191,7 +197,7 @@ export const AVLSandbox = () => {
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {ROTATION_CASES.map(rotation => {
-                                const isRequired = currentImbalance?.type === rotation.id;
+                                const isRequired = currentImbalance.type === rotation.id;
                                 return (
                                     <div key={rotation.id} className={`p-6 rounded-3xl border-2 transition-all flex flex-col justify-between ${isRequired ? 'bg-white border-rose-400 shadow-xl shadow-rose-100 ring-4 ring-rose-50' : 'bg-white/50 border-rose-100 opacity-60'}`}>
                                         <div>
@@ -220,7 +226,7 @@ export const AVLSandbox = () => {
                                 <Info size={14} /> Solution Mechanism
                             </h6>
                             <p className="text-sm text-rose-700 leading-relaxed font-medium">
-                                {ROTATION_CASES.find(r => r.id === currentImbalance?.type)?.mechanism}
+                                {ROTATION_CASES.find(r => r.id === currentImbalance.type)?.mechanism}
                             </p>
                         </div>
                     </div>
