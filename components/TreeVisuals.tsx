@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface NodeProps {
@@ -30,12 +29,12 @@ export const Node: React.FC<NodeProps> = ({ x, y, value, highlight, type = "defa
 
   return (
     <g onClick={onClick} className={`transition-all duration-500 ease-in-out ${onClick ? 'cursor-pointer hover:scale-110 origin-center' : ''}`} style={{ transformOrigin: `${x}px ${y}px` }}>
-      <circle cx={x} cy={y} r="20" className={`${getColors()} stroke-2 transition-all duration-300`} />
-      <text x={x} y={y} dy=".35em" textAnchor="middle" className={`text-sm font-extrabold pointer-events-none ${textColor} font-mono`}>
+      <circle cx={x} cy={y} r="18" className={`${getColors()} stroke-2 transition-all duration-300`} />
+      <text x={x} y={y} dy=".35em" textAnchor="middle" className={`text-xs sm:text-sm font-extrabold pointer-events-none ${textColor} font-mono`}>
         {value}
       </text>
       {label && (
-        <text x={x} y={y + 35} textAnchor="middle" className="text-[10px] fill-gray-400 font-bold uppercase tracking-widest">
+        <text x={x} y={y + 32} textAnchor="middle" className="text-[8px] sm:text-[10px] fill-gray-400 font-bold uppercase tracking-widest">
           {label}
         </text>
       )}
