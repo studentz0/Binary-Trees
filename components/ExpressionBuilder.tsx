@@ -11,16 +11,16 @@ export const ExpressionBuilder = () => {
   const svgRef = useRef<SVGSVGElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Drag-to-scroll (Panning) Logic
+  // 2D Panning Logic
   const isDragging = useRef(false);
-  const startX = useRef(0);
-  const startScrollLeft = useRef(0);
+  const startPos = useRef({ x: 0, y: 0 });
+  const startScroll = useRef({ left: 0, top: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
     isDragging.current = true;
-    startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
-    startScrollLeft.current = scrollContainerRef.current.scrollLeft;
+    startPos.current = { x: e.pageX - scrollContainerRef.current.offsetLeft, y: e.pageY - scrollContainerRef.current.offsetTop };
+    startScroll.current = { left: scrollContainerRef.current.scrollLeft, top: scrollContainerRef.current.scrollTop };
     scrollContainerRef.current.style.cursor = 'grabbing';
   };
 
@@ -28,8 +28,13 @@ export const ExpressionBuilder = () => {
     if (!isDragging.current || !scrollContainerRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX.current) * 1.5; // multiplier for speed
-    scrollContainerRef.current.scrollLeft = startScrollLeft.current - walk;
+    const y = e.pageY - scrollContainerRef.current.offsetTop;
+    
+    const walkX = (x - startPos.current.x) * 1.5;
+    const walkY = (y - startPos.current.y) * 1.5;
+    
+    scrollContainerRef.current.scrollLeft = startScroll.current.left - walkX;
+    scrollContainerRef.current.scrollTop = startScroll.current.top - walkY;
   };
 
   const stopDragging = () => {
@@ -45,7 +50,7 @@ export const ExpressionBuilder = () => {
     const serializer = new XMLSerializer();
     let source = serializer.serializeToString(svg);
     if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-      source = source.replace(/^<svg/, '<svg xmlns="http://www/w3/org/2000/svg"');
+      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
     }
     const img = new Image();
     const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
@@ -132,17 +137,18 @@ export const ExpressionBuilder = () => {
       setNodes(nodeList);
       setError(null);
       
-      // Auto-center root after rendering
+      // Reset view position
       setTimeout(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollLeft = 200; 
+          scrollContainerRef.current.scrollTop = 0;
         }
       }, 50);
     } catch (err) { setError("Syntax error."); }
   }, [expression]);
 
   return (
-    <Card title="Expression Playground" subtitle="Type any equation. Drag or swipe to explore the architecture.">
+    <Card title="Expression Playground" subtitle="Type any equation. Drag in any direction to explore architecture.">
       <div className="mb-6 sm:mb-10 w-full">
         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
             Infix Expression
@@ -162,18 +168,18 @@ export const ExpressionBuilder = () => {
       </div>
 
       <div className="relative rounded-2xl sm:rounded-[3rem] border-2 border-gray-100 bg-white shadow-inner w-full overflow-hidden">
-        {/* Workspace Container */}
+        {/* Workspace Container with 2D panning support */}
         <div 
           ref={scrollContainerRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={stopDragging}
           onMouseLeave={stopDragging}
-          className="w-full h-[360px] sm:h-[650px] overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-pan-x transition-all duration-300"
+          className="w-full h-[400px] sm:h-[650px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-auto transition-all duration-300"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* Expanded Canvas */}
-          <div className="min-w-[1200px] h-full flex items-start justify-center py-6">
+          {/* Expanded Canvas to allow room for panning */}
+          <div className="min-w-[1200px] min-h-[800px] flex items-start justify-center pt-12 pb-24">
             <svg 
               ref={svgRef}
               viewBox="0 0 1200 800" 
@@ -192,18 +198,17 @@ export const ExpressionBuilder = () => {
           </div>
         </div>
         
-        {/* Action Buttons: Moved to corners, outside the panning path */}
         <div className="absolute bottom-6 right-6 z-20">
           <button 
             onClick={downloadImage}
-            className="flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-4 bg-white border border-gray-100 shadow-2xl rounded-xl text-gray-800 font-black text-[10px] sm:text-xs uppercase tracking-tighter active:scale-95 transition-all hover:bg-gray-50"
+            className="flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-4 bg-white/90 backdrop-blur border border-gray-100 shadow-2xl rounded-xl text-gray-800 font-black text-[10px] sm:text-xs uppercase tracking-tighter active:scale-95 transition-all hover:bg-gray-50"
           >
             <Download size={14} className="text-blue-500" /> Save PNG
           </button>
         </div>
 
         <div className="absolute bottom-6 left-6 pointer-events-none bg-gray-900/10 backdrop-blur px-3 py-2 rounded-full flex items-center gap-2 text-[9px] font-black text-gray-600 uppercase tracking-widest border border-white/40">
-           <Move size={12} className="animate-pulse" /> Panning Active
+           <Move size={12} className="animate-pulse" /> 2D Pan Active
         </div>
       </div>
     </Card>

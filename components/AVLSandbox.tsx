@@ -55,16 +55,16 @@ export const AVLSandbox = () => {
     const svgRef = useRef<SVGSVGElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    // Panning Logic
+    // 2D Panning Logic
     const isDragging = useRef(false);
-    const startX = useRef(0);
-    const startScrollLeft = useRef(0);
+    const startPos = useRef({ x: 0, y: 0 });
+    const startScroll = useRef({ left: 0, top: 0 });
 
     const handleMouseDown = (e: React.MouseEvent) => {
       if (!scrollContainerRef.current) return;
       isDragging.current = true;
-      startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
-      startScrollLeft.current = scrollContainerRef.current.scrollLeft;
+      startPos.current = { x: e.pageX - scrollContainerRef.current.offsetLeft, y: e.pageY - scrollContainerRef.current.offsetTop };
+      startScroll.current = { left: scrollContainerRef.current.scrollLeft, top: scrollContainerRef.current.scrollTop };
       scrollContainerRef.current.style.cursor = 'grabbing';
     };
 
@@ -72,8 +72,13 @@ export const AVLSandbox = () => {
       if (!isDragging.current || !scrollContainerRef.current) return;
       e.preventDefault();
       const x = e.pageX - scrollContainerRef.current.offsetLeft;
-      const walk = (x - startX.current) * 1.5;
-      scrollContainerRef.current.scrollLeft = startScrollLeft.current - walk;
+      const y = e.pageY - scrollContainerRef.current.offsetTop;
+      
+      const walkX = (x - startPos.current.x) * 1.5;
+      const walkY = (y - startPos.current.y) * 1.5;
+      
+      scrollContainerRef.current.scrollLeft = startScroll.current.left - walkX;
+      scrollContainerRef.current.scrollTop = startScroll.current.top - walkY;
     };
 
     const stopDragging = () => {
@@ -177,7 +182,7 @@ export const AVLSandbox = () => {
 
     return (
         <div className="space-y-6 sm:space-y-12 w-full">
-            <Card title="AVL Sandbox" subtitle="Build and observe self-balancing trees. Drag horizontally to move.">
+            <Card title="AVL Sandbox" subtitle="Build and observe self-balancing trees. Drag in any direction to move.">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 sm:mb-10 w-full">
                     <input 
                       type="number" 
@@ -210,10 +215,10 @@ export const AVLSandbox = () => {
                     onMouseMove={handleMouseMove}
                     onMouseUp={stopDragging}
                     onMouseLeave={stopDragging}
-                    className="w-full h-[360px] sm:h-[650px] overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-pan-x transition-all duration-300"
+                    className="w-full h-[400px] sm:h-[650px] overflow-auto scrollbar-hide cursor-grab select-none active:cursor-grabbing p-4 touch-auto transition-all duration-300"
                     style={{ WebkitOverflowScrolling: 'touch' }}
                   >
-                      <div className="min-w-[1200px] h-full flex items-start justify-center py-6">
+                      <div className="min-w-[1200px] min-h-[800px] flex items-start justify-center pt-12 pb-24">
                         <svg 
                           ref={svgRef} 
                           viewBox="0 0 1200 800" 
@@ -245,7 +250,7 @@ export const AVLSandbox = () => {
                   )}
 
                   <div className="absolute bottom-6 left-6 pointer-events-none bg-gray-950/5 px-3 py-2 rounded-full flex items-center gap-2 text-[9px] font-black text-gray-500 uppercase tracking-widest border border-white/40">
-                     <Move size={12} className="animate-pulse" /> Panning Enabled
+                     <Move size={12} className="animate-pulse" /> 2D Pan Enabled
                   </div>
                 </div>
 
